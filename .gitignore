@@ -33,5 +33,7 @@ Release/
 *.swo
 
 # Project Specific
-python-core/vault/*.db
-python-core/vault/*.db-journal
+python_core/vault/*.db
+python_core/vault/*.db-journal
+python_core/__pycache__/
+python_core/ai_engine/__pycache__/

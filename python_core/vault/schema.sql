@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS mappings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT,
     real_val TEXT NOT NULL,
     fake_val TEXT NOT NULL,
     type TEXT,

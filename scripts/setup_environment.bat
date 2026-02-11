@@ -4,7 +4,7 @@ echo Setting up RyzenShield Environment...
 echo ==========================================
 
 echo [1/3] Installing Python Backend Dependencies...
-cd python-core
+cd python_core
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install Python dependencies.

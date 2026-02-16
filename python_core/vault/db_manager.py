@@ -63,22 +63,45 @@ class VaultManager:
 
     def get_stats(self):
         """Calculates cumulative stats for the dashboard."""
-        cursor = self.conn.cursor()
-        
-        # 1. Threats Neutralized (Count of INTERCEPT events)
-        cursor.execute("SELECT COUNT(*) FROM logs WHERE event_type = 'INTERCEPT'")
-        threats_neutralized = cursor.fetchone()[0]
-        
-        # 2. PII Elements Masked (Count of all mappings)
-        cursor.execute("SELECT COUNT(*) FROM mappings")
-        pii_masked = cursor.fetchone()[0]
-        
-        # 3. Latency Saved (Simulated: 45ms per block + 20ms per log)
-        # In a real AMD hardware scenario, the local NPU saves the trip to a cloud scanner.
-        latency_saved = (threats_neutralized * 45) + (pii_masked * 15)
-        
-        return {
-            "threats_neutralized": threats_neutralized,
-            "pii_masked": pii_masked,
-            "latency_saved": latency_saved
-        }
+        try:
+            cursor = self.conn.cursor()
+            
+            # 1. Threats Neutralized (Count of INTERCEPT events)
+            cursor.execute("SELECT COUNT(*) FROM logs WHERE event_type = 'INTERCEPT'")
+            row = cursor.fetchone()
+            threats_neutralized = row[0] if row else 0
+            
+            # 2. PII Elements Masked (Count of all mappings)
+            cursor.execute("SELECT COUNT(*) FROM mappings")
+            row = cursor.fetchone()
+            pii_masked = row[0] if row else 0
+            
+            # 3. Latency Saved (Simulated: 45ms per block + 20ms per log)
+            latency_saved = (threats_neutralized * 45) + (pii_masked * 15)
+
+            # 4. Digital Hygiene Score (Gamification)
+            hygiene_score = min(999, 500 + (threats_neutralized * 25) + (pii_masked * 10))
+            
+            # Determine Grade
+            grade = "B"
+            if hygiene_score > 900: grade = "S"
+            elif hygiene_score > 800: grade = "A+"
+            elif hygiene_score > 700: grade = "A"
+            elif hygiene_score > 600: grade = "B+"
+            
+            return {
+                "threats_neutralized": threats_neutralized,
+                "pii_masked": pii_masked,
+                "latency_saved": latency_saved,
+                "hygiene_score": hygiene_score,
+                "hygiene_grade": grade
+            }
+        except Exception as e:
+            print(f"[Vault] get_stats error: {e}")
+            return {
+                "threats_neutralized": 0,
+                "pii_masked": 0,
+                "latency_saved": 0,
+                "hygiene_score": 500,
+                "hygiene_grade": "B"
+            }

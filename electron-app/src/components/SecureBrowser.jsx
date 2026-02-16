@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck } from 'lucide-react';
 
 const SecureBrowser = () => {
-    const [url, setUrl] = useState('https://example.com');
+    const [url, setUrl] = useState('https://chatgpt.com');
     const [isLoading, setIsLoading] = useState(false);
     const [injected, setInjected] = useState(false);
+    const [siteSafety, setSiteSafety] = useState('secure'); // 'secure', 'suspicious', 'unknown'
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
     const [protectionMode, setProtectionMode] = useState('consent'); // 'consent' or 'auto'
     const webviewRef = useRef(null);
@@ -155,10 +156,40 @@ const SecureBrowser = () => {
         };
     }, [protectionMode]);
 
+    const checkUrlSafety = (targetUrl) => {
+        try {
+            const domain = new URL(targetUrl).hostname.toLowerCase();
+            const suspiciousPatterns = ['0', '1', 'v', 'w', 'x', '-login', 'verify', 'secure-chat'];
+            const trustedDomains = ['openai.com', 'chatgpt.com', 'google.com', 'github.com', 'microsoft.com', 'canvas.edu', 'blackboard.com'];
+
+            // 1. Check if it's explicitly trusted
+            const isTrusted = trustedDomains.some(d => domain.endsWith(d));
+            if (isTrusted) {
+                setSiteSafety('secure');
+                return;
+            }
+
+            // 2. Check for Lookalike (Homograph) characters or suspicious keywords
+            const hasSuspiciousChar = domain.includes('0') || domain.includes('1') || domain.includes('vv');
+            const hasUrgency = domain.includes('login') || domain.includes('security') || domain.includes('update');
+
+            if (hasSuspiciousChar || hasUrgency) {
+                setSiteSafety('suspicious');
+                showToast("AMD Early Warning: This URL looks suspicious (possible phish). Your school credentials might be at risk.", "warn");
+                return;
+            }
+
+            setSiteSafety('unknown');
+        } catch (e) {
+            setSiteSafety('unknown');
+        }
+    };
+
     const handleNavigate = (e) => {
         if (e.key === 'Enter' && webviewRef.current) {
             let target = url;
             if (!target.startsWith('http')) target = 'https://' + target;
+            checkUrlSafety(target);
             webviewRef.current.loadURL(target);
             setInjected(false);
         }
@@ -210,11 +241,23 @@ const SecureBrowser = () => {
                 </div>
 
                 {/* Address Bar */}
-                <div className="flex-1 flex items-center bg-black border border-neutral-700 rounded-md px-3 py-1.5 gap-2 group focus-within:border-orange-500 transition-colors">
-                    <ShieldCheck size={14} className={injected ? "text-green-500" : "text-orange-500"} />
-                    <span className="text-xs text-neutral-500 font-mono">
-                        {injected ? "🛡️ Protection Active" : "⏳ Loading..."}
-                    </span>
+                <div className={`flex-1 flex items-center bg-black border rounded-md px-3 py-1.5 gap-2 group transition-all duration-300 ${siteSafety === 'suspicious' ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' :
+                        siteSafety === 'secure' ? 'border-green-800' : 'border-neutral-700'
+                    } focus-within:border-orange-500`}>
+
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800">
+                        <ShieldCheck size={14} className={
+                            siteSafety === 'suspicious' ? "text-red-500 animate-pulse" :
+                                siteSafety === 'secure' ? "text-green-500" : "text-orange-500"
+                        } />
+                        <span className={`text-[10px] font-bold uppercase tracking-tighter ${siteSafety === 'suspicious' ? "text-red-500" :
+                                siteSafety === 'secure' ? "text-green-500" : "text-orange-500"
+                            }`}>
+                            {siteSafety === 'suspicious' ? "Suspicious" :
+                                siteSafety === 'secure' ? "Safe Site" : "Verifying"}
+                        </span>
+                    </div>
+
                     <div className="h-4 w-[1px] bg-neutral-800 mx-1"></div>
                     <input
                         className="flex-1 bg-transparent border-none outline-none text-sm text-neutral-200 font-sans"
@@ -222,6 +265,11 @@ const SecureBrowser = () => {
                         onChange={(e) => setUrl(e.target.value)}
                         onKeyDown={handleNavigate}
                     />
+
+                    <div className="flex gap-2 items-center">
+                        <div className={`w-2 h-2 rounded-full ${injected ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-neutral-600'}`}></div>
+                        <span className="text-[10px] text-neutral-500 font-mono hidden md:inline">Ryzen NPU Active</span>
+                    </div>
                 </div>
 
                 {/* Consent Mode Toggle */}

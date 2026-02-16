@@ -12,7 +12,6 @@ const PerformanceLab = () => {
         setResults(null);
 
         try {
-            // Simulated multi-stage benchmarking for visual drama
             for (let i = 1; i <= 5; i++) {
                 setNeuralPulse(i);
                 await new Promise(r => setTimeout(r, 600));
@@ -32,164 +31,137 @@ const PerformanceLab = () => {
     };
 
     return (
-        <div className="p-8 space-y-8 max-w-6xl mx-auto h-full overflow-y-auto">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-b border-neutral-900 pb-8">
+        <div className="p-6 space-y-6 max-w-5xl mx-auto h-full overflow-y-auto custom-scrollbar">
+            {/* Header - Scaled Down */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-neutral-900 pb-6">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-orange-500/20 p-2.5 rounded-2xl ring-1 ring-orange-500/20 shadow-[0_0_20px_rgba(249,115,22,0.15)]">
-                            <Activity className="w-6 h-6 text-orange-500" />
+                    <div className="flex items-center gap-2">
+                        <div className="bg-orange-500/10 p-2 rounded-xl border border-orange-500/20">
+                            <Activity className="w-5 h-5 text-orange-500" />
                         </div>
-                        <h1 className="text-4xl font-black text-white tracking-tighter italic uppercase">Performance Lab</h1>
+                        <h1 className="text-2xl font-black text-white tracking-tighter italic uppercase">Performance Lab</h1>
                     </div>
-                    <p className="text-neutral-500 text-sm max-w-md font-medium leading-relaxed">
-                        Hardware-level stress testing for the
-                        <span className="text-white font-bold mx-1">AMD Ryzen™ AI</span>
-                        engine. Visualizing local vs. cloud latency differentials.
+                    <p className="text-neutral-500 text-[10px] font-medium tracking-tight uppercase">
+                        Hardware stress testing for <span className="text-white font-bold">AMD Ryzen™ AI</span> XDNA Architecture.
                     </p>
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="hidden md:block text-right">
-                        <div className="text-[10px] text-neutral-600 font-black tracking-widest uppercase">Engine Status</div>
-                        <div className="text-xs font-bold text-green-500 flex items-center gap-1 justify-end">
-                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> OPTIMIZED
-                        </div>
-                    </div>
+                <div className="flex items-center gap-3">
                     <button
                         onClick={runStressTest}
                         disabled={benchmarking}
                         className={`
-                            relative overflow-hidden group flex items-center gap-3 px-8 py-4 rounded-2xl font-black tracking-tighter transition-all
+                            relative overflow-hidden group flex items-center gap-2 px-6 py-3 rounded-xl font-black text-xs tracking-widest transition-all
                             ${benchmarking
-                                ? 'bg-neutral-900 text-neutral-700 cursor-not-allowed border border-neutral-800'
-                                : 'bg-orange-500 text-white hover:bg-orange-600 hover:scale-[1.02] active:scale-95 shadow-[0_10px_30px_rgba(249,115,22,0.3)]'}
+                                ? 'bg-neutral-800 text-neutral-600 border border-neutral-700'
+                                : 'bg-orange-500 text-white hover:bg-orange-600 shadow-[0_5px_15px_rgba(249,115,22,0.2)]'}
                         `}
                     >
-                        <Zap size={20} className={benchmarking ? "animate-bounce" : ""} />
-                        {benchmarking ? "STRESS TESTING..." : "RUN NPU STRESS TEST"}
-
-                        {/* Shimmer Effect */}
-                        {!benchmarking && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />}
+                        <Zap size={14} className={benchmarking ? "animate-bounce" : ""} />
+                        {benchmarking ? "BENCHMARKING..." : "START NPU STRESS TEST"}
                     </button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-8">
 
                 {/* Visual Neural Graph Section */}
-                <div className="lg:col-span-8 space-y-8">
+                <div className="lg:col-span-8 space-y-6">
 
-                    <div className="bg-[#0e0e0e] border border-neutral-800 p-8 rounded-[3rem] relative overflow-hidden h-[400px] flex flex-col group">
-                        {/* Background Neural Grid */}
-                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                            style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+                    <div className="bg-[#0c0c0c] border border-neutral-800/50 p-6 rounded-[2rem] relative overflow-hidden h-[300px] flex flex-col group">
+                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-orange-500/5 to-transparent pointer-events-none" />
 
                         <div className="flex justify-between items-start relative z-10">
                             <div>
-                                <h3 className="text-[10px] font-black tracking-[0.4em] text-neutral-500 uppercase mb-1">Neural Flow Activity</h3>
-                                <div className="text-2xl font-black text-white italic tracking-tighter">XDNA Real-time Visualization</div>
+                                <h3 className="text-[9px] font-black tracking-[0.3em] text-neutral-600 uppercase mb-1">Neural Flow</h3>
+                                <div className="text-lg font-black text-white italic tracking-tighter">XDNA Core Real-time</div>
                             </div>
                             <div className="flex gap-2">
-                                <div className={`px-3 py-1 rounded-full text-[10px] font-black border transition-colors ${benchmarking ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-neutral-900 border-neutral-800 text-neutral-600'}`}>
+                                <div className={`px-2 py-0.5 rounded-full text-[8px] font-black border tracking-widest transition-colors ${benchmarking ? 'bg-orange-500/10 border-orange-500/30 text-orange-500' : 'bg-neutral-900 border-neutral-800 text-neutral-700'}`}>
                                     SENSING
-                                </div>
-                                <div className={`px-3 py-1 rounded-full text-[10px] font-black border transition-colors ${benchmarking ? 'bg-blue-500/10 border-blue-500/30 text-blue-500' : 'bg-neutral-900 border-neutral-800 text-neutral-600'}`}>
-                                    INTERCEPTING
                                 </div>
                             </div>
                         </div>
 
                         {/* Interactive Graph Area */}
-                        <div className="flex-1 mt-4 relative flex items-center justify-center">
-                            <NeuralViz active={benchmarking} pulse={neuralPulse} results={results} />
+                        <div className="flex-1 relative flex items-center justify-center">
+                            <NeuralViz active={benchmarking} />
                         </div>
 
-                        {/* Custom Footer Label */}
-                        <div className="flex justify-between items-center text-[10px] font-bold text-neutral-600 tracking-widest relative z-10">
+                        <div className="flex justify-between items-center text-[8px] font-bold text-neutral-700 tracking-widest relative z-10">
                             <div>RYZEN_AI_CORE_01 // ACTIVE_MAPPING</div>
-                            <div className="flex items-center gap-4">
-                                <span>BUFFER_00%</span>
-                                <span>CACHE_ENABLED</span>
-                            </div>
+                            <div>BUFFER_ALLOC_OK</div>
                         </div>
                     </div>
 
                     {/* Comparative Analytics */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-neutral-900/40 border border-neutral-800 p-6 rounded-[2rem] space-y-6 group hover:border-neutral-700 transition-all">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-neutral-800 rounded-xl group-hover:scale-110 transition-transform">
-                                    <Layers className="w-5 h-5 text-neutral-400" />
-                                </div>
-                                <span className="text-xs font-black tracking-widest text-neutral-500 uppercase">Latency Differential</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-neutral-900/20 border border-neutral-800/40 p-5 rounded-[1.5rem] space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Layers className="w-4 h-4 text-neutral-500" />
+                                <span className="text-[9px] font-black tracking-widest text-neutral-600 uppercase">Latency Differential</span>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 <div className="space-y-1">
-                                    <div className="flex justify-between text-[10px] font-bold text-neutral-400 uppercase">
+                                    <div className="flex justify-between text-[9px] font-bold text-neutral-500">
                                         <span>Cloud Layer</span>
                                         <span>{results ? `${results.cpu_latency}ms` : '---'}</span>
                                     </div>
-                                    <div className="h-2 bg-neutral-950 rounded-full overflow-hidden">
+                                    <div className="h-1.5 bg-neutral-950 rounded-full overflow-hidden">
                                         <motion.div animate={{ width: results ? "100%" : "0%" }} className="h-full bg-neutral-800" />
                                     </div>
                                 </div>
                                 <div className="space-y-1">
-                                    <div className="flex justify-between text-[10px] font-black text-orange-500 uppercase tracking-tighter">
-                                        <span>Ryzen NPU</span>
+                                    <div className="flex justify-between text-[9px] font-black text-orange-500 tracking-widest">
+                                        <span>RYZEN NPU</span>
                                         <span>{results ? `${results.npu_latency}ms` : '---'}</span>
                                     </div>
-                                    <div className="h-2 bg-orange-950/20 rounded-full overflow-hidden border border-orange-500/20">
+                                    <div className="h-1.5 bg-orange-950/20 rounded-full overflow-hidden border border-orange-500/10">
                                         <motion.div
                                             animate={{ width: results ? `${(results.npu_latency / results.cpu_latency) * 100}%` : "0%" }}
-                                            className="h-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.5)]"
+                                            className="h-full bg-orange-500"
                                         />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-neutral-900/40 border border-neutral-800 p-6 rounded-[2rem] flex flex-col justify-center items-center text-center space-y-2 group hover:border-orange-500/30 transition-all">
-                            <TrendingUp className="w-8 h-8 text-orange-500 mb-2" />
-                            <div className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Efficiency Multiplier</div>
-                            <div className="text-5xl font-black text-white italic tracking-tighter">
+                        <div className="bg-neutral-900/20 border border-neutral-800/40 p-5 rounded-[1.5rem] flex flex-col justify-center items-center text-center group">
+                            <div className="text-[9px] font-black text-neutral-600 uppercase tracking-widest mb-1">Efficiency Multiplier</div>
+                            <div className="text-4xl font-black text-white italic tracking-tighter">
                                 {results ? `${results.speedup}x` : '0.0x'}
                             </div>
-                            <div className="text-[10px] text-orange-500/60 font-bold uppercase tracking-widest">Acceleration Factor</div>
+                            <div className="text-[9px] text-orange-500/60 font-bold uppercase tracking-tighter mt-1">NPU Acceleration</div>
                         </div>
                     </div>
 
                 </div>
 
                 {/* Sidebar Diagnostics */}
-                <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-neutral-900 border border-neutral-800 rounded-[2.5rem] p-8 space-y-8 shadow-2xl relative overflow-hidden shadow-orange-500/5">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-[50px]" />
+                <div className="lg:col-span-4 space-y-4">
+                    <div className="bg-neutral-900/40 border border-neutral-800/40 rounded-[2rem] p-6 space-y-6 relative overflow-hidden">
+                        <div className="space-y-5 relative z-10">
+                            <h4 className="text-[9px] font-black tracking-[0.3em] text-neutral-600 uppercase">System Topology</h4>
 
-                        <div className="space-y-6 relative z-10">
-                            <h4 className="text-[10px] font-black tracking-[0.4em] text-neutral-600 uppercase">System Topology</h4>
-
-                            <div className="space-y-5">
-                                <DetailItem icon={Cpu} label="Hardware" value="AMD Ryzen™ 7040" active />
-                                <DetailItem icon={Shield} label="AI Engine" value="XDNA Architecture" active />
-                                <DetailItem icon={Share2} label="Network" value="Local-Proxy Only" active />
+                            <div className="space-y-4">
+                                <DetailItem icon={Cpu} label="Hardware" value="Ryzen™ 7040" active />
+                                <DetailItem icon={Shield} label="AI Engine" value="XDNA Core 1.0" active />
                                 <DetailItem icon={Timer} label="Sync" value="Real-time" active />
                             </div>
                         </div>
 
-                        <div className="pt-8 mt-4 border-t border-neutral-800 space-y-4 relative z-10">
-                            <div className="text-[10px] font-black tracking-[0.4em] text-neutral-600 uppercase">NPU Diagnostics</div>
-                            <div className="space-y-4">
-                                <StatRow label="Throughput" value={results ? `${results.tokens_per_sec}` : '---'} unit="ops/sec" />
-                                <StatRow label="Power State" value="Optimized" color="text-green-500" />
-                                <StatRow label="C++ Watcher" value="Connected" color="text-blue-500" />
+                        <div className="pt-6 mt-2 border-t border-neutral-800/50 space-y-3 relative z-10">
+                            <div className="text-[9px] font-black tracking-[0.3em] text-neutral-700 uppercase">Diagnostics</div>
+                            <div className="space-y-2">
+                                <StatRow label="Throughput" value={results ? `${results.tokens_per_sec}` : '---'} unit="ops/s" />
+                                <StatRow label="Power State" value="ECO" color="text-green-500" />
                             </div>
                         </div>
 
-                        <div className="bg-black p-4 rounded-xl border border-neutral-800 mt-8 relative z-10">
-                            <p className="text-[10px] text-neutral-500 font-medium leading-relaxed italic">
-                                "XDNA offload reduces system P99 latency by 74%, ensuring background privacy scans never interfere with student gaming or study sessions."
+                        <div className="bg-black/50 p-4 rounded-xl border border-neutral-800/50 mt-4">
+                            <p className="text-[9px] text-neutral-600 font-medium leading-relaxed italic">
+                                "XDNA offload ensures privacy scans never interfere with student gaming or study sessions."
                             </p>
                         </div>
                     </div>
@@ -200,116 +172,56 @@ const PerformanceLab = () => {
     );
 };
 
-const NeuralViz = ({ active, pulse, results }) => {
+const NeuralViz = ({ active }) => {
     return (
         <div className="relative w-full h-full flex items-center justify-center">
-            {/* Animated SVG Path for Neural Activity */}
-            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 400 200">
-                <defs>
-                    <linearGradient id="neuralGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#f97316" stopOpacity="0" />
-                        <stop offset="50%" stopColor="#f97316" stopOpacity="1" />
-                        <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
-                    </linearGradient>
-                </defs>
-
-                {/* Horizontal Flow Lines */}
-                {[...Array(5)].map((_, i) => (
+            <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 400 200">
+                {[...Array(3)].map((_, i) => (
                     <motion.path
                         key={i}
-                        d={`M -50 ${40 + i * 30} Q 200 ${30 + i * 40} 450 ${40 + i * 30}`}
+                        d={`M -20 ${60 + i * 40} L 420 ${60 + i * 40}`}
                         fill="none"
-                        stroke="url(#neuralGrad)"
-                        strokeWidth="1"
-                        initial={{ pathLength: 0, opacity: 0 }}
+                        stroke="#f97316"
+                        strokeWidth="0.5"
+                        initial={{ pathLength: 0 }}
                         animate={{
                             pathLength: active ? 1 : 0,
-                            opacity: active ? 0.2 : 0.05,
-                            x: active ? [0, 50, 0] : 0,
-                            transition: { duration: 2 - i * 0.2, repeat: Infinity, ease: "linear" }
+                            x: active ? [0, 40, 0] : 0,
                         }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
                     />
                 ))}
-
-                {/* Vertical Pulses (Interceptions) */}
-                <AnimatePresence>
-                    {active && [...Array(3)].map((_, i) => (
-                        <motion.circle
-                            key={i}
-                            cx={100 + i * 100}
-                            cy={100}
-                            r={10}
-                            fill="#f97316"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: [0, 4, 0], opacity: [0, 0.4, 0] }}
-                            transition={{ duration: 1, delay: i * 0.3, repeat: Infinity }}
-                        />
-                    ))}
-                </AnimatePresence>
             </svg>
 
-            {/* Core NPU Ring */}
-            <div className="relative z-10">
-                <motion.div
-                    animate={active ? { scale: [1, 1.1, 1], rotate: 360 } : {}}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className={`w-32 h-32 rounded-full border-2 border-dashed flex items-center justify-center transition-colors duration-500 ${active ? 'border-orange-500 shadow-[0_0_50px_rgba(249,115,22,0.4)]' : 'border-neutral-800'}`}
-                >
-                    <div className={`w-24 h-24 rounded-full border border-neutral-800 flex items-center justify-center bg-black/50 backdrop-blur-md`}>
-                        <Cpu size={32} className={`${active ? 'text-orange-500' : 'text-neutral-700'} transition-colors duration-500`} />
-                    </div>
-                </motion.div>
-
-                {/* Orbital Nodes */}
-                {active && [...Array(4)].map((_, i) => (
-                    <motion.div
-                        key={i}
-                        className="absolute w-2 h-2 bg-orange-500 rounded-full"
-                        animate={{
-                            x: Math.cos(i * 1.57) * 80,
-                            y: Math.sin(i * 1.57) * 80,
-                            scale: [1, 1.5, 1],
-                            opacity: [1, 0.5, 1]
-                        }}
-                        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
-                    />
-                ))}
-            </div>
-
-            {/* Floating Live Data Packets */}
-            {active && (
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    {[...Array(6)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ x: -20, y: Math.random() * 200, opacity: 0 }}
-                            animate={{ x: 420, opacity: [0, 1, 0] }}
-                            transition={{ duration: 1 + Math.random(), repeat: Infinity, delay: i * 0.5 }}
-                            className="absolute bg-orange-500 h-[1px] w-8 blur-[1px]"
-                        />
-                    ))}
+            <motion.div
+                animate={active ? { scale: [1, 1.05, 1], rotate: 360 } : {}}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className={`w-24 h-24 rounded-full border border-dashed flex items-center justify-center transition-all ${active ? 'border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.3)]' : 'border-neutral-800'}`}
+            >
+                <div className="w-16 h-16 rounded-full border border-neutral-900 bg-neutral-950 flex items-center justify-center">
+                    <Cpu size={24} className={active ? 'text-orange-500' : 'text-neutral-700'} />
                 </div>
-            )}
+            </motion.div>
         </div>
     );
 };
 
 const DetailItem = ({ icon: Icon, label, value, active }) => (
-    <div className="flex items-center justify-between group">
-        <div className="flex items-center gap-3">
-            <Icon size={14} className={active ? "text-orange-500" : "text-neutral-600"} />
-            <span className="text-xs font-bold text-neutral-400">{label}</span>
+    <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+            <Icon size={12} className={active ? "text-orange-500" : "text-neutral-700"} />
+            <span className="text-[10px] font-bold text-neutral-500">{label}</span>
         </div>
-        <span className={`text-xs font-black tracking-tight ${active ? "text-white" : "text-neutral-700"}`}>{value}</span>
+        <span className={`text-[10px] font-black ${active ? "text-white" : "text-neutral-800"}`}>{value}</span>
     </div>
 );
 
 const StatRow = ({ label, value, unit, color = "text-white" }) => (
     <div className="flex justify-between items-baseline">
-        <span className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">{label}</span>
+        <span className="text-[8px] font-bold text-neutral-700 uppercase tracking-widest">{label}</span>
         <div className="flex items-baseline gap-1">
-            <span className={`text-sm font-black ${color}`}>{value}</span>
-            {unit && <span className="text-[8px] font-bold text-neutral-500 uppercase">{unit}</span>}
+            <span className={`text-xs font-black ${color}`}>{value}</span>
+            {unit && <span className="text-[8px] font-bold text-neutral-600 uppercase">{unit}</span>}
         </div>
     </div>
 );

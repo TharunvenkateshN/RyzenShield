@@ -6,7 +6,8 @@ import DashboardStats from './components/DashboardStats';
 import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
 import PerformanceLab from './components/PerformanceLab';
-import { LayoutDashboard, Globe, Cpu, Settings, Lock, Activity, ShieldCheck, Zap } from 'lucide-react';
+import Settings from './components/Settings';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -87,7 +88,7 @@ function App() {
                     <NavItem id="browser" icon={Globe} label="Secure Browser" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
                     <NavItem id="performance" icon={Zap} label="Performance Lab" />
-                    <NavItem id="settings" icon={Settings} label="Settings" />
+                    <NavItem id="settings" icon={SettingsIcon} label="Settings" />
                 </nav>
 
                 <div className="mt-auto pt-6 border-t border-neutral-900 space-y-4">
@@ -193,7 +194,7 @@ function App() {
                         <PerformanceLab />
                     )}
                     {activeTab === 'settings' && (
-                        <div className="flex items-center justify-center h-full text-neutral-500">Settings UI Coming Soon</div>
+                        <Settings />
                     )}
                 </div>
             </div>

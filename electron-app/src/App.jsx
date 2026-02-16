@@ -7,6 +7,7 @@ import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
 import PerformanceLab from './components/PerformanceLab';
 import { LayoutDashboard, Globe, Cpu, Settings, Lock, Activity, ShieldCheck, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -52,10 +53,10 @@ function App() {
         <div className="bg-[#0a0a0a] w-screen h-screen text-white flex overflow-hidden font-sans select-none">
 
             {/* Sidebar */}
-            <div className="w-64 bg-black border-r border-neutral-800 flex flex-col p-4 drag-region">
+            <div className="w-64 bg-black border-r border-neutral-800 flex flex-col p-4">
 
-                {/* Logo Area */}
-                <div className="flex items-center gap-3 mb-8 px-2">
+                {/* Logo Area (The only draggable part of the sidebar) */}
+                <div className="flex items-center gap-3 mb-8 px-2 drag-region">
                     {/* The Logo Icon & Text */}
                     <div className="flex items-center gap-2">
                         <ShieldCheck
@@ -89,12 +90,22 @@ function App() {
                     <NavItem id="settings" icon={Settings} label="Settings" />
                 </nav>
 
-                <div className="mt-auto pt-4 border-t border-neutral-800">
-                    <div className="flex items-center gap-3 px-3 py-2 bg-neutral-900 rounded-lg border border-orange-900/30">
-                        <Cpu size={18} className="text-orange-500" />
-                        <div className="text-xs">
-                            <div className="font-bold text-orange-400">AMD NPU ACTIVE</div>
-                            <div className="text-neutral-500">XDNA Architecture</div>
+                <div className="mt-auto pt-6 border-t border-neutral-900 space-y-4">
+                    <div className="relative group">
+                        <div className="absolute inset-0 bg-orange-500/10 blur-[20px] rounded-full group-hover:bg-orange-500/20 transition-all" />
+                        <div className="flex items-center gap-3 px-4 py-3 bg-neutral-900/50 rounded-2xl border border-neutral-800 relative z-10 overflow-hidden">
+                            <div className="absolute top-0 right-0 p-1">
+                                <motion.div
+                                    animate={{ opacity: [0.2, 1, 0.2] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="w-1 h-1 bg-orange-500 rounded-full"
+                                />
+                            </div>
+                            <Cpu size={20} className="text-orange-500" />
+                            <div>
+                                <div className="text-[10px] font-black text-white uppercase tracking-widest italic leading-none">AMD Ryzen™ AI</div>
+                                <div className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest mt-1">XDNA Core v1.0</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -102,9 +113,36 @@ function App() {
 
             {/* Main Content Area - Scrollable */}
             <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-                {/* Custom Window Controls could go here */}
 
-                <div className={`flex-1 overflow-y-auto bg-[#0a0a0a] ${activeTab === 'browser' ? 'p-0' : 'p-6'}`}>
+                {/* Custom Window Title Bar & Controls */}
+                <div className="h-10 bg-black border-b border-neutral-900 flex items-center justify-between px-4 drag-region shrink-0">
+                    <div className="text-[10px] font-black tracking-[0.3em] text-neutral-700 uppercase">
+                        {activeTab === 'browser' ? 'Browser Session' : 'Secured Environment'}
+                    </div>
+
+                    <div className="flex items-center no-drag">
+                        <button
+                            onClick={() => window.electron.ipcRenderer.send('window-minimize')}
+                            className="p-2 hover:bg-neutral-800 text-neutral-500 hover:text-white transition-colors"
+                        >
+                            <div className="w-3 h-[1px] bg-current" />
+                        </button>
+                        <button
+                            onClick={() => window.electron.ipcRenderer.send('window-maximize')}
+                            className="p-2 hover:bg-neutral-800 text-neutral-500 hover:text-white transition-colors"
+                        >
+                            <div className="w-3 h-3 border border-current" />
+                        </button>
+                        <button
+                            onClick={() => window.electron.ipcRenderer.send('window-close')}
+                            className="p-2 hover:bg-red-600 text-neutral-500 hover:text-white transition-colors"
+                        >
+                            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.2" fill="none" /></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div className={`flex-1 overflow-y-auto bg-[#0a0a0a] ${activeTab === 'browser' ? 'p-0' : 'p-4'}`}>
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6 max-w-5xl mx-auto">
                             <div>

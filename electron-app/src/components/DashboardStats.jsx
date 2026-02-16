@@ -28,144 +28,124 @@ const DashboardStats = () => {
     }, []);
 
     return (
-        <div className="space-y-6 mb-8">
+        <div className="space-y-6">
             <AnimatePresence mode="wait">
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="bg-gradient-to-br from-[#121212] via-[#0a0a0a] to-black border border-neutral-800 p-8 rounded-[2.5rem] overflow-hidden relative group"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-[#0c0c0c] border border-neutral-800 p-10 rounded-[3rem] overflow-hidden relative group shadow-2xl shadow-orange-500/5"
                 >
-                    {/* Background Hardware Waveform Pattern */}
-                    <div className="absolute inset-0 opacity-[0.05] pointer-events-none select-none">
-                        <svg className="w-full h-full" viewBox="0 0 800 200" preserveAspectRatio="none">
-                            <motion.path
-                                d="M0 100 Q 100 50 200 100 T 400 100 T 600 100 T 800 100"
-                                fill="none"
-                                stroke="#f97316"
-                                strokeWidth="4"
-                                animate={{
-                                    d: [
-                                        "M0 100 Q 100 50 200 100 T 400 100 T 600 100 T 800 100",
-                                        "M0 100 Q 100 150 200 100 T 400 100 T 600 100 T 800 100",
-                                        "M0 100 Q 100 50 200 100 T 400 100 T 600 100 T 800 100"
-                                    ]
-                                }}
-                                transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-                            />
+                    {/* Neural Background Mesh */}
+                    <div className="absolute inset-0 opacity-[0.05] pointer-events-none">
+                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                            <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+                                <circle cx="1" cy="1" r="0.5" fill="orange" />
+                            </pattern>
+                            <rect width="100" height="100" fill="url(#grid)" />
                         </svg>
                     </div>
 
-                    <div className="flex flex-col lg:flex-row justify-between items-center gap-12 relative z-10">
-                        {/* Score Section */}
-                        <div className="flex-1 space-y-6">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-orange-500/20 p-2 rounded-xl ring-1 ring-orange-500/30">
-                                    <Activity className="w-5 h-5 text-orange-500" />
+                    <div className="flex flex-col xl:flex-row justify-between items-center gap-16 relative z-10">
+
+                        {/* Centerpiece: The Score Gauge */}
+                        <div className="flex flex-col items-center gap-8 group/score">
+                            <div className="relative">
+                                {/* Glowing outer ring */}
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                                    className="absolute -inset-4 border border-dashed border-orange-500/20 rounded-full"
+                                />
+
+                                {/* The Main Circular Gauge */}
+                                <svg className="w-48 h-48 transform -rotate-90">
+                                    <circle cx="96" cy="96" r="84" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-neutral-900" />
+                                    <motion.circle
+                                        cx="96" cy="96" r="84" stroke="currentColor" strokeWidth="12" fill="transparent"
+                                        strokeDasharray="527.7"
+                                        animate={{ strokeDashoffset: 527.7 - (527.7 * stats.hygiene_score) / 1000 }}
+                                        transition={{ duration: 2.5, ease: "circOut" }}
+                                        strokeLinecap="round"
+                                        className="text-orange-500 drop-shadow-[0_0_15px_rgba(249,115,22,0.6)]"
+                                    />
+                                </svg>
+
+                                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <div className="text-[10px] font-black text-neutral-600 uppercase tracking-[0.4em] mb-1">Protection</div>
+                                    <motion.span
+                                        key={stats.hygiene_score}
+                                        className="text-5xl font-black text-white italic tracking-tighter"
+                                    >
+                                        {stats.hygiene_score}
+                                    </motion.span>
                                 </div>
-                                <h2 className="text-xl font-bold text-white uppercase tracking-[0.2em]">Digital Hygiene Score</h2>
                             </div>
 
-                            <p className="text-neutral-500 text-sm leading-relaxed max-w-sm">
-                                Your real-time privacy reputation. Every neutralized leak increases your
-                                <span className="text-white font-semibold italic ml-1">Ryzen AI Protection Level</span>.
-                            </p>
-
-                            <div className="flex items-center gap-8 pt-4">
-                                <div className="relative">
-                                    {/* Circular Progress Gauge */}
-                                    <svg className="w-32 h-32 transform -rotate-90">
-                                        <circle cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-neutral-900" />
-                                        <motion.circle
-                                            cx="64" cy="64" r="56" stroke="currentColor" strokeWidth="10" fill="transparent"
-                                            strokeDasharray="351.8"
-                                            animate={{ strokeDashoffset: 351.8 - (351.8 * stats.hygiene_score) / 1000 }}
-                                            transition={{ duration: 2, ease: "circOut" }}
-                                            strokeLinecap="round"
-                                            className="text-orange-500 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]"
-                                        />
-                                    </svg>
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-[10px] font-black text-neutral-600 uppercase tracking-widest">Score</span>
-                                        <motion.span
-                                            key={stats.hygiene_score}
-                                            initial={{ scale: 1.2, opacity: 0 }}
-                                            animate={{ scale: 1, opacity: 1 }}
-                                            className="text-3xl font-black text-white"
-                                        >
-                                            {stats.hygiene_score}
-                                        </motion.span>
-                                    </div>
+                            <div className="text-center space-y-2">
+                                <div className="flex items-center justify-center gap-3">
+                                    <span className="text-6xl font-black text-white italic tracking-tighter">{stats.hygiene_grade}</span>
+                                    {stats.hygiene_grade === 'S' && <Award className="text-yellow-500 w-12 h-12 animate-bounce shadow-yellow-500/20" />}
                                 </div>
-
-                                <div className="space-y-2">
-                                    <div className="flex items-baseline gap-2">
-                                        <motion.span
-                                            key={stats.hygiene_grade}
-                                            initial={{ x: -10, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                            className="text-6xl font-black text-white"
-                                        >
-                                            {stats.hygiene_grade}
-                                        </motion.span>
-                                        {stats.hygiene_grade === 'S' && (
-                                            <motion.div
-                                                animate={{ y: [0, -5, 0] }}
-                                                transition={{ repeat: Infinity, duration: 2 }}
-                                            >
-                                                <Award className="text-yellow-500 w-10 h-10 drop-shadow-[0_0_15px_rgba(234,179,8,0.6)]" />
-                                            </motion.div>
-                                        )}
-                                    </div>
-                                    <div className="text-[10px] bg-orange-600/10 border border-orange-500/20 text-orange-500 px-3 py-1 rounded-md font-black tracking-[0.2em] uppercase inline-block">
-                                        Current Rank
-                                    </div>
+                                <div className="bg-orange-600/10 border border-orange-500/20 text-orange-500 px-4 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
+                                    Global Rank Level
                                 </div>
                             </div>
                         </div>
 
-                        {/* Quick Stats Grid */}
-                        <div className="grid grid-cols-2 lg:flex lg:flex-col gap-4 min-w-[200px]">
-                            <StatCard label="XP EARNED" value={`+${stats.pii_masked * 5}`} icon={Zap} color="text-yellow-400" />
-                            <StatCard label="NPU SAVINGS" value={`${stats.latency_saved}ms`} icon={Cpu} color="text-orange-400" />
+                        {/* Feature Stats Grid */}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+
+                            <VisualStatCard
+                                label="Threats Logged"
+                                value={stats.threats_neutralized}
+                                icon={Shield}
+                                color="text-green-500"
+                                desc="Local intercept events"
+                            />
+
+                            <VisualStatCard
+                                label="Elements Masked"
+                                value={stats.pii_masked}
+                                icon={Lock}
+                                color="text-blue-500"
+                                desc="Secure vault mappings"
+                            />
+
+                            <VisualStatCard
+                                label="NPU Latency"
+                                value={`${stats.latency_saved}ms`}
+                                icon={Cpu}
+                                color="text-orange-500"
+                                desc="AMD Ryzen™ AI Savings"
+                            />
+
+                            <VisualStatCard
+                                label="Session XP"
+                                value={`+${stats.pii_masked * 5 + stats.threats_neutralized * 10}`}
+                                icon={Zap}
+                                color="text-yellow-500"
+                                desc="Privacy reputation gain"
+                            />
+
                         </div>
                     </div>
                 </motion.div>
             </AnimatePresence>
-
-            {/* Bottom Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <StatusCard label="Threats Logged" value={stats.threats_neutralized} icon={Shield} glow="group-hover:text-green-400" color="bg-green-500" delay={0.1} />
-                <StatusCard label="Elements Masked" value={stats.pii_masked} icon={Lock} glow="group-hover:text-blue-400" color="bg-blue-500" delay={0.2} />
-            </div>
         </div>
     );
 };
 
-const StatCard = ({ label, value, icon: Icon, color }) => (
-    <div className="bg-neutral-900/60 backdrop-blur-xl border border-white/5 p-5 rounded-[2rem] flex flex-col items-start min-w-[180px] shadow-2xl">
-        <div className="text-[9px] text-neutral-600 font-black uppercase tracking-[0.2em] mb-2">{label}</div>
-        <div className="flex items-center gap-2">
-            <Icon size={16} className={color} />
-            <div className={`text-2xl font-black text-white ${color}`}>{value}</div>
+const VisualStatCard = ({ label, value, icon: Icon, color, desc }) => (
+    <div className="bg-neutral-900/40 border border-neutral-800 p-6 rounded-[2rem] flex items-center justify-between group hover:bg-neutral-900/80 hover:border-neutral-700 transition-all cursor-default">
+        <div>
+            <div className="text-[10px] font-black text-neutral-600 uppercase tracking-widest mb-1">{label}</div>
+            <div className="text-3xl font-black text-white tracking-tighter italic mb-1">{value}</div>
+            <div className="text-[9px] font-bold text-neutral-700 uppercase italic">{desc}</div>
+        </div>
+        <div className={`p-4 rounded-2xl bg-black border border-neutral-800 transition-all group-hover:scale-110`}>
+            <Icon size={24} className={color} />
         </div>
     </div>
-);
-
-const StatusCard = ({ label, value, icon: Icon, color, delay, glow }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay }}
-        className="bg-neutral-900/30 border border-neutral-800 p-6 rounded-[2rem] flex items-center justify-between group cursor-default transition-all duration-500 hover:bg-neutral-900/60 hover:border-neutral-700 hover:scale-[1.02]"
-    >
-        <div className="space-y-1">
-            <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{label}</div>
-            <div className="text-4xl font-black text-white group-hover:scale-110 origin-left transition-transform duration-500">{value}</div>
-        </div>
-        <div className={`p-5 rounded-[1.5rem] bg-black border border-neutral-800 transition-all duration-500 shadow-inner`}>
-            <Icon className={`w-7 h-7 text-neutral-600 transition-all duration-500 ${glow}`} />
-        </div>
-    </motion.div>
 );
 
 export default DashboardStats;

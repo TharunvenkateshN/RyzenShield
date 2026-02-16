@@ -65,6 +65,14 @@ function createWindow() {
 
     // Open DevTools in dev mode
     mainWindow.webContents.openDevTools();
+
+    // 🪟 WINDOW CONTROLS
+    ipcMain.on('window-minimize', () => mainWindow.minimize());
+    ipcMain.on('window-maximize', () => {
+        if (mainWindow.isMaximized()) mainWindow.unmaximize();
+        else mainWindow.maximize();
+    });
+    ipcMain.on('window-close', () => mainWindow.close());
 }
 
 app.whenReady().then(() => {

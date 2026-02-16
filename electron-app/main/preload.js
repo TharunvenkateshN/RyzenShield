@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron', {
     ipcRenderer: {
         send: (channel, data) => {
-            let validChannels = ['window-moving'];
+            let validChannels = ['window-moving', 'window-minimize', 'window-maximize', 'window-close'];
             if (validChannels.includes(channel)) {
                 ipcRenderer.send(channel, data);
             }

@@ -5,7 +5,8 @@ import RealTimeLog from './components/RealTimeLog';
 import DashboardStats from './components/DashboardStats';
 import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
-import { LayoutDashboard, Globe, Cpu, Settings, Lock, Activity, ShieldCheck } from 'lucide-react';
+import PerformanceLab from './components/PerformanceLab';
+import { LayoutDashboard, Globe, Cpu, Settings, Lock, Activity, ShieldCheck, Zap } from 'lucide-react';
 
 function App() {
     const [activeTab, setActiveTab] = useState('dashboard');
@@ -84,6 +85,7 @@ function App() {
                     <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                     <NavItem id="browser" icon={Globe} label="Secure Browser" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
+                    <NavItem id="performance" icon={Zap} label="Performance Lab" />
                     <NavItem id="settings" icon={Settings} label="Settings" />
                 </nav>
 
@@ -146,6 +148,11 @@ function App() {
                     {/* Data Vault Tab */}
                     {activeTab === 'vault' && (
                         <DataVault />
+                    )}
+
+                    {/* Performance Lab Tab */}
+                    {activeTab === 'performance' && (
+                        <PerformanceLab />
                     )}
                     {activeTab === 'settings' && (
                         <div className="flex items-center justify-center h-full text-neutral-500">Settings UI Coming Soon</div>

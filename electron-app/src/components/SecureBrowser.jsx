@@ -10,6 +10,7 @@ const SecureBrowser = () => {
     const [siteSafety, setSiteSafety] = useState('secure'); // 'secure', 'suspicious', 'unknown'
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
     const [protectionMode, setProtectionMode] = useState('consent'); // 'consent' or 'auto'
+    const [rehydrateEnabled, setRehydrateEnabled] = useState(true);
     const [isFocused, setIsFocused] = useState(false);
     const webviewRef = useRef(null);
     const containerRef = useRef(null);
@@ -73,8 +74,15 @@ const SecureBrowser = () => {
                                     if (scanXHR.status === 200) {
                                         const result = JSON.parse(scanXHR.responseText);
                                         if (result.sanitized) {
-                                            console.log("[RyzenShield] 🛡️ Shadowing PII with Tokens");
-                                            config.body = result.text;
+                                            let shouldSanitize = true;
+                                            if (window.__RyzenShieldMode === 'consent') {
+                                                shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information (Email/Key/Phone) in your request.\\n\\nWould you like RyzenShield to sanitize this data before sending?\\n\\n[Click OK to Protect, Cancel to allow raw data]");
+                                            }
+
+                                            if (shouldSanitize) {
+                                                console.log("[RyzenShield] 🛡️ Shadowing PII with Tokens");
+                                                config.body = result.text;
+                                            }
                                         }
                                     }
                                 }
@@ -83,8 +91,8 @@ const SecureBrowser = () => {
                         
                         const response = await originalFetch(resource, config);
                         
-                        // 🛡️ RE-HYDRATION
-                        if (response.ok && !url.includes('9000/')) {
+                        // 🛡️ RE-HYDRATION (Only if enabled)
+                        if (${rehydrateEnabled} && response.ok && !url.includes('9000/')) {
                             const clone = response.clone();
                             try {
                                 const text = await clone.text();
@@ -124,8 +132,14 @@ const SecureBrowser = () => {
                                 if (scanXHR.status === 200) {
                                     const result = JSON.parse(scanXHR.responseText);
                                     if (result.sanitized) {
-                                        arguments[0] = result.text;
-                                        console.log("[RyzenShield] 🛡️ XHR Shadowing Active");
+                                        let shouldSanitize = true;
+                                        if (window.__RyzenShieldMode === 'consent') {
+                                            shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nSanitize with Ryzen AI for your safety?\\n\\n[Click OK for Santization]");
+                                        }
+                                        if (shouldSanitize) {
+                                            arguments[0] = result.text;
+                                            console.log("[RyzenShield] 🛡️ XHR Shadowing Active");
+                                        }
                                     }
                                 }
                             } catch (err) {}
@@ -209,7 +223,7 @@ const SecureBrowser = () => {
             webview.removeEventListener('did-stop-loading', handleLoad);
             if (container.firstChild) container.removeChild(container.firstChild);
         };
-    }, [url, protectionMode]);
+    }, [url, protectionMode, rehydrateEnabled]);
 
     const handleNavigate = (e) => {
         if (e.key === 'Enter') {
@@ -309,9 +323,16 @@ const SecureBrowser = () => {
                     </div>
 
                     {/* Protection Toggles - Cinematic */}
-                    <div className="hidden lg:flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-neutral-800/60 order-3">
+                    <div className="hidden lg:flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-neutral-800/60 order-3 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <div className="px-2 py-1 text-[8px] font-black text-neutral-600 uppercase tracking-tighter border-r border-neutral-800/60 mr-1">Shield</div>
                         <ModeBtn active={protectionMode === 'consent'} onClick={() => setProtectionMode('consent')} label="CONSENT" />
                         <ModeBtn active={protectionMode === 'auto'} onClick={() => setProtectionMode('auto')} label="AUTO" />
+                    </div>
+
+                    <div className="hidden lg:flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-neutral-800/60 order-4 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                        <div className="px-2 py-1 text-[8px] font-black text-neutral-600 uppercase tracking-tighter border-r border-neutral-800/60 mr-1">Shadow</div>
+                        <ModeBtn active={rehydrateEnabled} onClick={() => setRehydrateEnabled(true)} label="ON" />
+                        <ModeBtn active={!rehydrateEnabled} onClick={() => setRehydrateEnabled(false)} label="OFF" />
                     </div>
                 </div>
             </div>

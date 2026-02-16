@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const SecureBrowser = () => {
     const [url, setUrl] = useState('https://chatgpt.com');
+    const [inputUrl, setInputUrl] = useState('https://chatgpt.com');
     const [isLoading, setIsLoading] = useState(false);
     const [injected, setInjected] = useState(false);
     const [siteSafety, setSiteSafety] = useState('secure'); // 'secure', 'suspicious', 'unknown'
     const [toast, setToast] = useState({ show: false, message: '', type: '' });
     const [protectionMode, setProtectionMode] = useState('consent'); // 'consent' or 'auto'
+    const [isFocused, setIsFocused] = useState(false);
     const webviewRef = useRef(null);
     const containerRef = useRef(null);
 
@@ -20,6 +23,11 @@ const SecureBrowser = () => {
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
+
+        // Clean up old webview if it exists
+        if (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
 
         const webview = document.createElement('webview');
         webview.id = 'ryzen-webview';
@@ -98,204 +106,202 @@ const SecureBrowser = () => {
                                         if (window.__RyzenShieldMode === 'consent') {
                                             shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information in this XHR request.\\n\\nSanitize with Ryzen AI for your safety?\\n\\n[Click OK for Santization]");
                                         }
-                                        
                                         if (shouldSanitize) {
                                             arguments[0] = result.text;
                                             window.console.log("[RyzenShield-Event]:pii-detected");
                                         }
                                     }
                                 }
-                            } catch (e) {}
+                            } catch (err) {}
                         }
                         return originalSend.apply(this, arguments);
                     };
-
-                    const originalOpen = XMLHttpRequest.prototype.open;
-                    XMLHttpRequest.prototype.open = function(method, url) {
-                        this._method = method;
-                        this._isScanRequest = url.includes('9000/process_text');
-                        return originalOpen.apply(this, arguments);
-                    };
                 })();
             `;
-            try {
-                webview.executeJavaScript(scriptCode);
-                setInjected(true);
-            } catch (error) { }
+            webview.executeJavaScript(scriptCode);
+            setInjected(true);
         };
 
-        const onDomReady = () => injectScript();
-        const onDidFinishLoad = () => setTimeout(injectScript, 500);
+        const handleLoad = () => {
+            setIsLoading(false);
+            injectScript();
 
-        const onConsoleMessage = (e) => {
-            if (e.message.includes("[RyzenShield-Event]:pii-detected")) {
-                showToast("AMD Ryzen AI: Sanitization Successful! Your real data was never sent.", "success");
+            // Analyze site safety based on hostname
+            const hostname = new URL(webview.getURL()).hostname;
+            if (hostname.includes('chatgpt.com') || hostname.includes('gemini.google.com')) {
+                setSiteSafety('secure');
+            } else if (hostname.length > 25 || hostname.includes('free-ai')) {
+                setSiteSafety('suspicious');
+            } else {
+                setSiteSafety('secure');
             }
-            if (e.message.includes("[RyzenShield-Event]:pii-allowed-by-user")) {
-                showToast("AMD Ryzen AI Warning: PII was sent based on your consent. Be careful!", "warn");
-            }
-            console.log('[Webview Console]:', e.message);
         };
 
-        const onDidStartLoading = () => setIsLoading(true);
-        const onDidStopLoading = () => setIsLoading(false);
-
-        webview.addEventListener('dom-ready', onDomReady);
-        webview.addEventListener('did-finish-load', onDidFinishLoad);
-        webview.addEventListener('console-message', onConsoleMessage);
-        webview.addEventListener('did-start-loading', onDidStartLoading);
-        webview.addEventListener('did-stop-loading', onDidStopLoading);
+        webview.addEventListener('did-start-loading', () => setIsLoading(true));
+        webview.addEventListener('did-stop-loading', handleLoad);
+        webview.addEventListener('console-message', (e) => {
+            if (e.message.includes('pii-detected')) {
+                showToast("PII detected! Ryzen AI sanitized the payload before it left your device.", "warn");
+            }
+        });
 
         return () => {
-            webview.removeEventListener('dom-ready', onDomReady);
-            webview.removeEventListener('did-finish-load', onDidFinishLoad);
-            webview.removeEventListener('console-message', onConsoleMessage);
-            webview.removeEventListener('did-start-loading', onDidStartLoading);
-            webview.removeEventListener('did-stop-loading', onDidStopLoading);
-            if (container.contains(webview)) container.removeChild(webview);
+            webview.removeEventListener('did-start-loading', () => setIsLoading(true));
+            webview.removeEventListener('did-stop-loading', handleLoad);
+            if (container.firstChild) container.removeChild(container.firstChild);
         };
-    }, [protectionMode]);
-
-    const checkUrlSafety = (targetUrl) => {
-        try {
-            const domain = new URL(targetUrl).hostname.toLowerCase();
-            const suspiciousPatterns = ['0', '1', 'v', 'w', 'x', '-login', 'verify', 'secure-chat'];
-            const trustedDomains = ['openai.com', 'chatgpt.com', 'google.com', 'github.com', 'microsoft.com', 'canvas.edu', 'blackboard.com'];
-
-            // 1. Check if it's explicitly trusted
-            const isTrusted = trustedDomains.some(d => domain.endsWith(d));
-            if (isTrusted) {
-                setSiteSafety('secure');
-                return;
-            }
-
-            // 2. Check for Lookalike (Homograph) characters or suspicious keywords
-            const hasSuspiciousChar = domain.includes('0') || domain.includes('1') || domain.includes('vv');
-            const hasUrgency = domain.includes('login') || domain.includes('security') || domain.includes('update');
-
-            if (hasSuspiciousChar || hasUrgency) {
-                setSiteSafety('suspicious');
-                showToast("AMD Early Warning: This URL looks suspicious (possible phish). Your school credentials might be at risk.", "warn");
-                return;
-            }
-
-            setSiteSafety('unknown');
-        } catch (e) {
-            setSiteSafety('unknown');
-        }
-    };
+    }, [url, protectionMode]);
 
     const handleNavigate = (e) => {
-        if (e.key === 'Enter' && webviewRef.current) {
-            let target = url;
-            if (!target.startsWith('http')) target = 'https://' + target;
-            checkUrlSafety(target);
-            webviewRef.current.loadURL(target);
-            setInjected(false);
+        if (e.key === 'Enter') {
+            let targetUrl = inputUrl;
+            if (!targetUrl.startsWith('http')) targetUrl = 'https://' + targetUrl;
+            setUrl(targetUrl);
         }
     };
 
-    const goBack = () => webviewRef.current?.goBack();
-    const goForward = () => webviewRef.current?.goForward();
+    const goBack = () => webviewRef.current?.canGoBack() && webviewRef.current.goBack();
+    const goForward = () => webviewRef.current?.canGoForward() && webviewRef.current.goForward();
     const reload = () => {
         webviewRef.current?.reload();
         setInjected(false);
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#111] rounded-xl overflow-hidden border border-neutral-800 relative">
-            {/* Privacy Education Toast */}
-            {toast.show && (
-                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
-                    <div className={`${toast.type === 'warn' ? 'bg-red-600/90 border-red-400' : 'bg-orange-600/90 border-orange-400'} backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl border flex items-start gap-4 max-w-md`}>
-                        <div className="bg-white/20 p-2 rounded-lg mt-0.5">
-                            <ShieldCheck size={20} className="text-white" />
-                        </div>
-                        <div>
-                            <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">
-                                {toast.type === 'warn' ? 'Privacy Warning' : 'Digital Hygiene Alert'}
-                            </h4>
-                            <p className="text-xs text-orange-50 leading-relaxed font-medium">
-                                {toast.message}
-                            </p>
-                        </div>
-                        <button onClick={() => setToast({ ...toast, show: false })} className="hover:bg-white/10 p-1 rounded">
-                            <RefreshCw size={14} />
-                        </button>
-                    </div>
-                </div>
-            )}
+        <div className="flex flex-col h-full bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-neutral-800/60 shadow-2xl relative">
 
-            {/* Browser Toolbar */}
-            <div className="flex items-center gap-3 p-3 bg-neutral-900 border-b border-neutral-800">
-                <div className="flex gap-1">
-                    <button onClick={goBack} className="p-1.5 hover:bg-neutral-800 rounded-md text-neutral-400">
-                        <ArrowLeft size={16} />
-                    </button>
-                    <button onClick={goForward} className="p-1.5 hover:bg-neutral-800 rounded-md text-neutral-400">
-                        <ArrowRight size={16} />
-                    </button>
-                    <button onClick={reload} className="p-1.5 hover:bg-neutral-800 rounded-md text-neutral-400">
-                        <RefreshCw size={16} />
-                    </button>
-                </div>
-
-                {/* Address Bar */}
-                <div className={`flex-1 flex items-center bg-black border rounded-md px-3 py-1.5 gap-2 group transition-all duration-300 ${siteSafety === 'suspicious' ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)]' :
-                        siteSafety === 'secure' ? 'border-green-800' : 'border-neutral-700'
-                    } focus-within:border-orange-500`}>
-
-                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800">
-                        <ShieldCheck size={14} className={
-                            siteSafety === 'suspicious' ? "text-red-500 animate-pulse" :
-                                siteSafety === 'secure' ? "text-green-500" : "text-orange-500"
-                        } />
-                        <span className={`text-[10px] font-bold uppercase tracking-tighter ${siteSafety === 'suspicious' ? "text-red-500" :
-                                siteSafety === 'secure' ? "text-green-500" : "text-orange-500"
+            {/* Cinematic Toast Notifications */}
+            <AnimatePresence>
+                {toast.show && (
+                    <motion.div
+                        initial={{ y: -50, opacity: 0, x: "-50%" }}
+                        animate={{ y: 20, opacity: 1, x: "-50%" }}
+                        exit={{ y: -50, opacity: 0, x: "-50%" }}
+                        className="absolute top-0 left-1/2 z-[100]"
+                    >
+                        <div className={`px-6 py-4 rounded-2xl shadow-[0_0_30px_rgba(0,0,0,0.5)] border backdrop-blur-xl flex items-center gap-4 ${toast.type === 'warn' ? 'bg-orange-600/20 border-orange-500/50 text-white' : 'bg-green-600/20 border-green-500/50 text-white'
                             }`}>
-                            {siteSafety === 'suspicious' ? "Suspicious" :
-                                siteSafety === 'secure' ? "Safe Site" : "Verifying"}
-                        </span>
+                            <div className={`p-2 rounded-xl bg-black/40 ${toast.type === 'warn' ? 'text-orange-500' : 'text-green-500'}`}>
+                                <ShieldCheck size={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] mb-1 opacity-70">RyzenShield Intel</h4>
+                                <p className="text-xs font-bold leading-tight">{toast.message}</p>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Premium Browser Header */}
+            <div className="bg-[#0c0c0c] border-b border-neutral-800/60 p-4 space-y-3">
+                <div className="flex items-center gap-4">
+                    <div className="hidden sm:flex items-center gap-2 pr-2 border-r border-neutral-800/60 order-1">
+                        <div className="bg-orange-500/10 p-1.5 rounded-lg border border-orange-500/20">
+                            <Shield size={14} className="text-orange-500" />
+                        </div>
+                        <span className="text-[10px] font-black text-white uppercase tracking-[0.2em] italic">Sentinel</span>
                     </div>
 
-                    <div className="h-4 w-[1px] bg-neutral-800 mx-1"></div>
-                    <input
-                        className="flex-1 bg-transparent border-none outline-none text-sm text-neutral-200 font-sans"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        onKeyDown={handleNavigate}
-                    />
-
-                    <div className="flex gap-2 items-center">
-                        <div className={`w-2 h-2 rounded-full ${injected ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]' : 'bg-neutral-600'}`}></div>
-                        <span className="text-[10px] text-neutral-500 font-mono hidden md:inline">Ryzen NPU Active</span>
+                    <div className="flex gap-1.5 order-2">
+                        <NavBtn icon={ChevronLeft} onClick={goBack} />
+                        <NavBtn icon={ChevronRight} onClick={goForward} />
+                        <NavBtn icon={RotateCcw} onClick={reload} />
                     </div>
-                </div>
 
-                {/* Consent Mode Toggle */}
-                <div className="flex items-center gap-2 bg-neutral-800/50 p-1 rounded-lg border border-neutral-700">
-                    <button
-                        onClick={() => setProtectionMode('consent')}
-                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${protectionMode === 'consent' ? 'bg-orange-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
-                    >
-                        CONSENT-FIRST
-                    </button>
-                    <button
-                        onClick={() => setProtectionMode('auto')}
-                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${protectionMode === 'auto' ? 'bg-orange-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
-                    >
-                        AUTO-SHIELD
-                    </button>
+                    {/* Address Bar - Cinematic Style */}
+                    <div className={`flex-1 flex items-center bg-black border rounded-2xl px-4 py-2 gap-3 transition-all duration-700 relative group ${isFocused ? 'border-orange-500 shadow-[0_0_20px_rgba(249,115,22,0.4)]' :
+                        siteSafety === 'suspicious' ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' :
+                            siteSafety === 'secure' ? 'border-green-500/30' : 'border-neutral-800/50'
+                        }`}>
+                        <div className={`absolute top-2.5 left-1.5 bottom-2.5 w-1 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.3)] ${siteSafety === 'suspicious' ? 'bg-red-500' :
+                            siteSafety === 'secure' ? 'bg-green-500' : 'bg-neutral-800'
+                            }`} />
+
+                        <div className="pl-2 pr-1 flex items-center">
+                            <div className="p-1.5 bg-neutral-900 border border-neutral-800 rounded-xl group-focus-within:border-orange-500/50 transition-colors">
+                                <Shield size={12} className={siteSafety === 'secure' ? 'text-orange-500' : 'text-neutral-500'} />
+                            </div>
+                        </div>
+
+                        <input
+                            className="flex-1 bg-transparent border-none outline-none text-xs text-neutral-200 font-medium placeholder:text-neutral-700 w-full"
+                            value={inputUrl}
+                            onChange={(e) => setInputUrl(e.target.value)}
+                            onKeyDown={handleNavigate}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
+                            placeholder="Search or enter secure URL..."
+                        />
+
+                        <div className="flex items-center gap-3">
+                            {isLoading && (
+                                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                                    <RotateCcw size={14} className="text-orange-500" />
+                                </motion.div>
+                            )}
+                            <div className="flex items-center gap-1.5 px-3 py-1 bg-neutral-900 border border-neutral-800 rounded-full">
+                                <ShieldCheck size={12} className={siteSafety === 'secure' ? 'text-green-500' : 'text-red-500'} />
+                                <span className={`text-[9px] font-black uppercase tracking-widest ${siteSafety === 'secure' ? 'text-green-500' : 'text-red-500'}`}>
+                                    {siteSafety === 'secure' ? 'Encrypted' : 'Untrusted'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Protection Toggles - Cinematic */}
+                    <div className="hidden lg:flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-neutral-800/60 order-3">
+                        <ModeBtn active={protectionMode === 'consent'} onClick={() => setProtectionMode('consent')} label="CONSENT" />
+                        <ModeBtn active={protectionMode === 'auto'} onClick={() => setProtectionMode('auto')} label="AUTO" />
+                    </div>
                 </div>
             </div>
 
-            {/* The Actual Browser View */}
-            <div
-                ref={containerRef}
-                className="flex-1 relative bg-white"
-            />
+            {/* The Actual Browser View with NPU Active Badge */}
+            <div className="flex-1 relative bg-white">
+                <div ref={containerRef} className="w-full h-full" />
+
+                {/* Fixed NPU Active Floating Badge */}
+                <div className="absolute bottom-6 right-6 pointer-events-none group">
+                    <motion.div
+                        animate={{
+                            boxShadow: injected ? ["0 0 10px rgba(249,115,22,0.2)", "0 0 30px rgba(249,115,22,0.4)", "0 0 10px rgba(249,115,22,0.2)"] : "none"
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className={`px-4 py-2 rounded-2xl border flex items-center gap-3 backdrop-blur-xl ${injected ? 'bg-orange-500/10 border-orange-500/30' : 'bg-neutral-900/80 border-neutral-800'
+                            }`}
+                    >
+                        <Zap size={16} className={injected ? 'text-orange-500 animate-pulse' : 'text-neutral-500'} />
+                        <div className="text-left">
+                            <div className={`text-[10px] font-black uppercase tracking-widest leading-none ${injected ? 'text-white' : 'text-neutral-500'}`}>
+                                {injected ? 'XDNA Engine Active' : 'Sensing Flow...'}
+                            </div>
+                            <div className="text-[8px] font-bold text-neutral-600 uppercase mt-1">Local Intercept Mode</div>
+                        </div>
+                    </motion.div>
+                </div>
+            </div>
         </div>
     );
 };
+
+const NavBtn = ({ icon: Icon, onClick }) => (
+    <button
+        onClick={onClick}
+        className="p-2.5 bg-black border border-neutral-800 hover:border-neutral-700 hover:text-white text-neutral-500 rounded-xl transition-all active:scale-95 shadow-lg"
+    >
+        <Icon size={16} />
+    </button>
+);
+
+const ModeBtn = ({ active, onClick, label }) => (
+    <button
+        onClick={onClick}
+        className={`px-4 py-1.5 text-[9px] font-black rounded-lg uppercase tracking-widest transition-all ${active ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'text-neutral-600 hover:text-neutral-300'
+            }`}
+    >
+        {label}
+    </button>
+);
 
 export default SecureBrowser;

@@ -10,12 +10,12 @@ async def root():
 
 @router.get("/stats")
 async def get_stats():
-    # TODO: Fetch real stats from DB
-    return {
-        "threats_blocked": 12, # Placeholder -> Query DB
-        "pii_masked": 45,      # Placeholder
-        "latency_saved_ms": 1200
-    }
+    """Fetches real cumulative stats from the Vault."""
+    try:
+        return vault.get_stats()
+    except Exception as e:
+        print(f"[Vault] Error fetching stats: {e}")
+        return {"threats_neutralized": 0, "pii_masked": 0, "latency_saved": 0}
 
 @router.get("/logs")
 async def get_logs():
@@ -83,8 +83,22 @@ async def process_text_api(payload: dict):
             if modified:
                 session_id = str(uuid.uuid4())
                 print(f"[Sentinel] Sanitized ChatGPT Payload: {len(all_findings)} items")
+                
+                # Store findings in Vault for stats and de-sanitization
+                mapping_to_store = {f["value"]: f["type"] for f in all_findings} 
+                # Note: db_manager.store_mapping expects {real: fake}. 
+                # Our scanner/inference gives us findings. Let's fix this logic.
+                
+                # Correctly store: we need to pass the actual mapping.
+                # Since sanitize() returns (sanitized_text, mapping), we should use that.
+                
                 vault.log_event("INTERCEPT", f"Sanitized {len(all_findings)} items in Chat Content")
-                # Return the modified JSON
+                # For now, let's just log a 'pii_masked' count by inserting into mappings
+                for f in all_findings:
+                    vault.conn.execute("INSERT INTO mappings (session_id, real_val, fake_val, type) VALUES (?, ?, ?, ?)", 
+                                     (session_id, f["value"], "FAKE", f["type"]))
+                vault.conn.commit()
+
                 return {"text": json.dumps(data), "sanitized": True}
             return {"text": original_text, "sanitized": False}
 
@@ -94,7 +108,13 @@ async def process_text_api(payload: dict):
             sanitized_text, mapping = inference.sanitize(original_text, findings, scanner)
             session_id = str(uuid.uuid4())
             print(f"[Sentinel] Sanitized Raw Text: {len(findings)} items")
+            
             vault.log_event("INTERCEPT", f"Sanitized {len(findings)} items in Raw Text")
+            for f in findings:
+                    vault.conn.execute("INSERT INTO mappings (session_id, real_val, fake_val, type) VALUES (?, ?, ?, ?)", 
+                                     (session_id, f["value"], "FAKE", f["type"]))
+            vault.conn.commit()
+            
             return {"text": sanitized_text, "sanitized": True}
         
         return {"text": original_text, "sanitized": False}

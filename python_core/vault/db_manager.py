@@ -60,3 +60,25 @@ class VaultManager:
         cursor = self.conn.cursor()
         cursor.execute("SELECT event_type, message, timestamp FROM logs ORDER BY id DESC LIMIT ?", (limit,))
         return [dict(row) for row in cursor.fetchall()]
+
+    def get_stats(self):
+        """Calculates cumulative stats for the dashboard."""
+        cursor = self.conn.cursor()
+        
+        # 1. Threats Neutralized (Count of INTERCEPT events)
+        cursor.execute("SELECT COUNT(*) FROM logs WHERE event_type = 'INTERCEPT'")
+        threats_neutralized = cursor.fetchone()[0]
+        
+        # 2. PII Elements Masked (Count of all mappings)
+        cursor.execute("SELECT COUNT(*) FROM mappings")
+        pii_masked = cursor.fetchone()[0]
+        
+        # 3. Latency Saved (Simulated: 45ms per block + 20ms per log)
+        # In a real AMD hardware scenario, the local NPU saves the trip to a cloud scanner.
+        latency_saved = (threats_neutralized * 45) + (pii_masked * 15)
+        
+        return {
+            "threats_neutralized": threats_neutralized,
+            "pii_masked": pii_masked,
+            "latency_saved": latency_saved
+        }

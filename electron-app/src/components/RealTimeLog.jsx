@@ -29,7 +29,8 @@ const RealTimeLog = () => {
 
     const formatTime = (ts) => {
         if (!ts) return new Date().toLocaleTimeString();
-        return new Date(ts).toLocaleTimeString();
+        // SQLite's CURRENT_TIMESTAMP is UTC. Append " UTC" to ensure correct conversion.
+        return new Date(ts + " UTC").toLocaleTimeString();
     };
 
     return (

@@ -20,8 +20,13 @@ window.fetch = async (...args) => {
                 return originalFetch(...args);
             }
 
-            const bodyText = config.body.toString();
-            if (bodyText.includes('31,139,8,0') || bodyText.length > 50000) {
+            let bodyText = config.body;
+            if (typeof bodyText === 'object') {
+                try { bodyText = JSON.stringify(bodyText); } catch (e) { }
+            }
+            bodyText = bodyText.toString();
+
+            if (bodyText.includes('31,139,8,0') || bodyText.length > 500000) {
                 return originalFetch(...args);
             }
 
@@ -35,16 +40,48 @@ window.fetch = async (...args) => {
             if (scanXHR.status === 200) {
                 const result = JSON.parse(scanXHR.responseText);
                 if (result.sanitized) {
-                    console.log("[RyzenShield] 🛡️ PII Detected & Sanitized via FETCH Hook!");
-                    config.body = result.text; // Replace the body with sanitized version
+                    console.log("[RyzenShield] 🛡️ Shadowing PII with Tokens");
+                    config.body = result.text; // Replace the body with shadow tokens
                 }
             }
         } catch (err) {
-            console.error("[RyzenShield] Scan failed:", err);
+            console.error("[RyzenShield] Shadowing failed:", err);
         }
     }
 
-    return originalFetch(resource, config);
+    const response = await originalFetch(resource, config);
+
+    // 🛡️ RE-HYDRATION: Handle Response
+    if (response.ok && !url.includes('9000/')) {
+        const clone = response.clone();
+        try {
+            const text = await clone.text();
+            if (text.includes('[RS-')) {
+                // Request local re-hydration
+                const rehydrateXHR = new XMLHttpRequest();
+                rehydrateXHR.open('POST', 'http://127.0.0.1:9000/vault/rehydrate', false);
+                rehydrateXHR.setRequestHeader('Content-Type', 'application/json');
+                rehydrateXHR.send(JSON.stringify({ text }));
+
+                if (rehydrateXHR.status === 200) {
+                    const result = JSON.parse(rehydrateXHR.responseText);
+                    if (result.replaced > 0) {
+                        console.log(`[RyzenShield] 💎 Re-hydrated ${result.replaced} Shadow Tokens locally!`);
+
+                        // We must return a new response with the re-hydrated text
+                        const blob = new Blob([result.text], { type: response.headers.get('content-type') });
+                        return new Response(blob, {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: response.headers
+                        });
+                    }
+                }
+            }
+        } catch (e) { }
+    }
+
+    return response;
 };
 
 // Hook XMLHttpRequest (XHR) for legacy/other calls

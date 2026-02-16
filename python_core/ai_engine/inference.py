@@ -28,13 +28,15 @@ class AIInferenceEngine:
         
         sanitized_text = list(text)
 
+        type_counts = {}
         for finding in sorted_findings:
             real_val = finding['value']
             pii_type = finding['type']
             
             # Ensure consistent replacement (Tharun -> Person_1 every time)
             if real_val not in mapping:
-                fake_val = scanner.generate_fake(pii_type, real_val)
+                type_counts[pii_type] = type_counts.get(pii_type, 0) + 1
+                fake_val = scanner.generate_fake(pii_type, real_val, type_counts[pii_type])
                 # If multiple same types, append index? For now, simple mapping.
                 mapping[real_val] = fake_val
             else:

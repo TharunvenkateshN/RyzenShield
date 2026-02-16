@@ -16,18 +16,20 @@ class PIIScanner:
         self.regex_patterns = {
             "EMAIL": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
             "PHONE": r"\b(?:\+?\d{1,3}[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}\b",
-            "API_KEY": r"(sk-[a-zA-Z0-9]{32,})",
+            "API_KEY": r"(sk-[a-zA-Z0-9\-]{8,})", # Relaxed and hyphen-capable for demo/test keys
             "SSN": r"\b\d{3}-\d{2}-\d{4}\b",
             "IPV4": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",
             "AWS_KEY": r"(AKIA[0-9A-Z]{16})",
-            "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", # Slack/Generic
-            "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})"
+            "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", 
+            "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})",
+            "BUDGET": r"\$\d+(?:\.\d+)?(?:k|m|b)?\b" # Catch $50k, $1000, etc.
         }
         
         # 2. Institutional/Confidential Keywords
         self.confidential_keywords = [
             "CONFIDENTIAL", "INTERNAL ONLY", "PROPRIETARY", "DRAFT PAPER", 
-            "RESEARCH CODE", "DO NOT SHARE", "NDA", "RESTRICTED", "PASSWORD:"
+            "RESEARCH CODE", "DO NOT SHARE", "NDA", "RESTRICTED", "PASSWORD:",
+            "PRIVATE KEY", "SECRET KEY" # Added for context
         ]
         
         # 2. SpaCy NER Labels to target
@@ -91,14 +93,19 @@ class PIIScanner:
         
         return findings
 
-    def generate_fake(self, pii_type: str, original_value: str = "") -> str:
+    def generate_fake(self, pii_type: str, original_value: str = "", count: int = 1) -> str:
         """
-        Generates context-aware fake values using a localized list.
+        Generates unique hardware-managed Shadow Tokens for Zero-Knowledge interaction.
         """
-        if pii_type == "EMAIL": return "user_privacy@example.com"
-        if pii_type == "PHONE": return "555-0199"
-        if pii_type == "API_KEY": return "sk-proj-RyzenShield-Protected"
-        if pii_type == "PERSON": return "Jane Doe"
-        if pii_type == "ORG": return "Acme Corp"
-        if pii_type == "GPE": return "Metropolis"
-        return "[REDACTED]"
+        prefix = "RS" # Ryzen Shield
+        suffix = f"{count:02d}"
+        
+        if pii_type == "EMAIL": return f"[{prefix}-MAIL-{suffix}]"
+        if pii_type == "PHONE": return f"[{prefix}-PHONE-{suffix}]"
+        if pii_type == "API_KEY": return f"[{prefix}-KEY-{suffix}]"
+        if pii_type == "PERSON": return f"[{prefix}-USER-{suffix}]"
+        if pii_type == "ORG": return f"[{prefix}-ORG-{suffix}]"
+        if pii_type == "GPE": return f"[{prefix}-LOC-{suffix}]"
+        if pii_type == "CONFIDENTIAL": return f"[{prefix}-DATA-{suffix}]"
+        
+        return f"[{prefix}-SECRET-{suffix}]"

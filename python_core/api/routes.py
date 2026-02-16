@@ -35,14 +35,33 @@ async def get_vault_mappings():
         print(f"[Vault] Error fetching mappings: {e}")
         return []
 
-@router.get("/vault/reveal/{mapping_id}")
-async def reveal_mapping(mapping_id: int):
-    """Reveals the real value for a specific mapping (Admin/Local only)."""
+@router.post("/vault/rehydrate")
+async def rehydrate_text(payload: dict):
+    """
+    Takes text containing shadow tokens and returns re-hydrated text.
+    Used locally to swap [RS-XXXX] tokens back to real values.
+    """
     try:
-        real_val = vault.get_real_value(mapping_id)
-        return {"real_val": real_val}
+        text = payload.get("text", "")
+        import re
+        shadow_pattern = r"\[RS-[A-Z]+-[0-9]+\]"
+        matches = re.findall(shadow_pattern, text)
+        
+        rehydrated_text = text
+        replaced_count = 0
+        
+        for token in set(matches): # Use set to avoid redundant DB calls
+            real_val = vault.get_real_by_fake(token)
+            if real_val:
+                rehydrated_text = rehydrated_text.replace(token, real_val)
+                replaced_count += 1
+        
+        if replaced_count > 0:
+            vault.log_event("REHYDRATE", f"Locally restored {replaced_count} items in browser view")
+            
+        return {"text": rehydrated_text, "replaced": replaced_count}
     except Exception as e:
-        return {"error": str(e)}
+        return {"text": payload.get("text", ""), "error": str(e)}
 
 @router.get("/benchmark")
 async def run_benchmark():
@@ -101,6 +120,7 @@ async def process_text_api(payload: dict):
             # Targeted Scanning for ChatGPT: ONLY scan the 'parts' field.
             # This prevents us from breaking IDs, timezones, and protocol fields.
             modified = False
+            collected_mappings = {}
             all_findings = []
             
             def targeted_scan(obj):
@@ -116,6 +136,7 @@ async def process_text_api(payload: dict):
                                         sanitized, mapping = inference.sanitize(v[i], findings, scanner)
                                         v[i] = sanitized
                                         all_findings.extend(findings)
+                                        collected_mappings.update(mapping)
                                         modified = True
                         elif isinstance(v, (dict, list)):
                             targeted_scan(v)
@@ -127,23 +148,11 @@ async def process_text_api(payload: dict):
             
             if modified:
                 session_id = str(uuid.uuid4())
-                print(f"[Sentinel] Sanitized ChatGPT Payload: {len(all_findings)} items")
+                print(f"[Sentinel] Shadowed ChatGPT Payload: {len(collected_mappings)} items")
                 
-                # Store findings in Vault for stats and de-sanitization
-                mapping_to_store = {f["value"]: f["type"] for f in all_findings} 
-                # Note: db_manager.store_mapping expects {real: fake}. 
-                # Our scanner/inference gives us findings. Let's fix this logic.
+                vault.log_event("INTERCEPT", f"Shadowed {len(all_findings)} items in Chat Content")
+                vault.store_mapping(session_id, collected_mappings)
                 
-                # Correctly store: we need to pass the actual mapping.
-                # Since sanitize() returns (sanitized_text, mapping), we should use that.
-                
-                vault.log_event("INTERCEPT", f"Sanitized {len(all_findings)} items in Chat Content")
-                # For now, let's just log a 'pii_masked' count by inserting into mappings
-                for f in all_findings:
-                    vault.conn.execute("INSERT INTO mappings (session_id, real_val, fake_val, type) VALUES (?, ?, ?, ?)", 
-                                     (session_id, f["value"], "FAKE", f["type"]))
-                vault.conn.commit()
-
                 return {"text": json.dumps(data), "sanitized": True}
             return {"text": original_text, "sanitized": False}
 
@@ -152,13 +161,10 @@ async def process_text_api(payload: dict):
         if findings:
             sanitized_text, mapping = inference.sanitize(original_text, findings, scanner)
             session_id = str(uuid.uuid4())
-            print(f"[Sentinel] Sanitized Raw Text: {len(findings)} items")
+            print(f"[Sentinel] Sanitized Raw Text with {len(mapping)} Shadow Tokens")
             
-            vault.log_event("INTERCEPT", f"Sanitized {len(findings)} items in Raw Text")
-            for f in findings:
-                    vault.conn.execute("INSERT INTO mappings (session_id, real_val, fake_val, type) VALUES (?, ?, ?, ?)", 
-                                     (session_id, f["value"], "FAKE", f["type"]))
-            vault.conn.commit()
+            vault.log_event("INTERCEPT", f"Shadowed {len(mapping)} items in Raw Text")
+            vault.store_mapping(session_id, mapping)
             
             return {"text": sanitized_text, "sanitized": True}
         

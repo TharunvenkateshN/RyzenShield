@@ -53,63 +53,79 @@ const SecureBrowser = () => {
                     window.fetch = async function(...args) {
                         let [resource, config] = args;
                         const url = typeof resource === 'string' ? resource : resource.url;
-                        if (url.includes('9000/process_text')) return originalFetch.apply(this, args);
+                        
+                        if (url.includes('9000/')) return originalFetch(...args);
                         
                         if (config && config.method === 'POST' && config.body) {
                             try {
-                                if (config.body instanceof Uint8Array || config.body instanceof ArrayBuffer || config.body instanceof Blob) {
-                                    return originalFetch.apply(this, args);
-                                }
-                                const bodyText = typeof config.body === 'string' ? config.body : config.body.toString();
-                                
-                                const scanXHR = new XMLHttpRequest();
-                                scanXHR.open('POST', 'http://127.0.0.1:9000/process_text', false);
-                                scanXHR.setRequestHeader('Content-Type', 'application/json');
-                                scanXHR.send(JSON.stringify({ text: bodyText }));
-                                
-                                if (scanXHR.status === 200) {
-                                    const result = JSON.parse(scanXHR.responseText);
-                                    if (result.sanitized) {
-                                        let shouldSanitize = true;
-                                        if (window.__RyzenShieldMode === 'consent') {
-                                            shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information (Email/Key/Phone) in your request.\\n\\nWould you like RyzenShield to sanitize this data before sending?\\n\\n[Click OK to Protect, Cancel to allow raw data]");
-                                        }
-
-                                        if (shouldSanitize) {
+                                if (!(config.body instanceof Uint8Array || config.body instanceof ArrayBuffer || config.body instanceof Blob)) {
+                                    let bodyText = config.body;
+                                    if (typeof bodyText === 'object') {
+                                        try { bodyText = JSON.stringify(bodyText); } catch(e) {}
+                                    }
+                                    bodyText = bodyText.toString();
+                                    
+                                    const scanXHR = new XMLHttpRequest();
+                                    scanXHR.open('POST', 'http://127.0.0.1:9000/process_text', false);
+                                    scanXHR.setRequestHeader('Content-Type', 'application/json');
+                                    scanXHR.send(JSON.stringify({ text: bodyText }));
+                                    
+                                    if (scanXHR.status === 200) {
+                                        const result = JSON.parse(scanXHR.responseText);
+                                        if (result.sanitized) {
+                                            console.log("[RyzenShield] 🛡️ Shadowing PII with Tokens");
                                             config.body = result.text;
-                                            window.console.log("[RyzenShield-Event]:pii-detected");
-                                        } else {
-                                            window.console.log("[RyzenShield-Event]:pii-allowed-by-user");
                                         }
                                     }
                                 }
                             } catch (err) {}
                         }
-                        return originalFetch.apply(this, args);
+                        
+                        const response = await originalFetch(resource, config);
+                        
+                        // 🛡️ RE-HYDRATION
+                        if (response.ok && !url.includes('9000/')) {
+                            const clone = response.clone();
+                            try {
+                                const text = await clone.text();
+                                if (text.includes('[RS-')) {
+                                    const reXHR = new XMLHttpRequest();
+                                    reXHR.open('POST', 'http://127.0.0.1:9000/vault/rehydrate', false);
+                                    reXHR.setRequestHeader('Content-Type', 'application/json');
+                                    reXHR.send(JSON.stringify({ text }));
+                                    if (reXHR.status === 200) {
+                                        const res = JSON.parse(reXHR.responseText);
+                                        if (res.replaced > 0) {
+                                            console.log("[RyzenShield] 💎 Re-hydrated Shadow Tokens locally");
+                                            const blob = new Blob([res.text], { type: response.headers.get('content-type') });
+                                            return new Response(blob, { status: response.status, headers: response.headers });
+                                        }
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                        return response;
                     };
                     
                     const originalSend = XMLHttpRequest.prototype.send;
                     XMLHttpRequest.prototype.send = function(body) {
                         if (this._method === 'POST' && body && !this._isScanRequest) {
                             try {
+                                let bodyText = body;
+                                if (typeof bodyText === 'object') {
+                                    try { bodyText = JSON.stringify(bodyText); } catch(e) {}
+                                }
+                                
                                 const scanXHR = new XMLHttpRequest();
                                 scanXHR.open('POST', 'http://127.0.0.1:9000/process_text', false);
                                 scanXHR.setRequestHeader('Content-Type', 'application/json');
-                                
-                                let textToSend = typeof body === 'string' ? body : body.toString();
-                                scanXHR.send(JSON.stringify({ text: textToSend }));
+                                scanXHR.send(JSON.stringify({ text: bodyText.toString() }));
                                 
                                 if (scanXHR.status === 200) {
                                     const result = JSON.parse(scanXHR.responseText);
                                     if (result.sanitized) {
-                                        let shouldSanitize = true;
-                                        if (window.__RyzenShieldMode === 'consent') {
-                                            shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information in this XHR request.\\n\\nSanitize with Ryzen AI for your safety?\\n\\n[Click OK for Santization]");
-                                        }
-                                        if (shouldSanitize) {
-                                            arguments[0] = result.text;
-                                            window.console.log("[RyzenShield-Event]:pii-detected");
-                                        }
+                                        arguments[0] = result.text;
+                                        console.log("[RyzenShield] 🛡️ XHR Shadowing Active");
                                     }
                                 }
                             } catch (err) {}
@@ -126,14 +142,57 @@ const SecureBrowser = () => {
             setIsLoading(false);
             injectScript();
 
-            // Analyze site safety based on hostname
-            const hostname = new URL(webview.getURL()).hostname;
-            if (hostname.includes('chatgpt.com') || hostname.includes('gemini.google.com')) {
-                setSiteSafety('secure');
-            } else if (hostname.length > 25 || hostname.includes('free-ai')) {
-                setSiteSafety('suspicious');
-            } else {
-                setSiteSafety('secure');
+            try {
+                const urlObj = new URL(webview.getURL());
+                const hostname = urlObj.hostname.toLowerCase();
+                const protocol = urlObj.protocol;
+
+                // 🛡️ Ryzen AI Phishing Detection Engine
+                const suspiciousPatterns = [
+                    'free-ai', 'openai-login', 'chat-gpt', 'gemini-bonus',
+                    'meta-ai-auth', 'claude-pro-free', 'wallet-connect',
+                    'airdrop', 'login-verify', 'secure-update'
+                ];
+
+                const untrustedTLDs = ['.xyz', '.top', '.pw', '.live', '.online', '.site', '.monster'];
+
+                let riskScore = 0;
+
+                // 1. Check for Typosquatting/Keywords
+                if (suspiciousPatterns.some(p => hostname.includes(p))) riskScore += 50;
+
+                // 2. Check for suspicious TLDs on AI keywords
+                if (untrustedTLDs.some(tld => hostname.endsWith(tld)) &&
+                    (hostname.includes('ai') || hostname.includes('gpt') || hostname.includes('cloud'))) {
+                    riskScore += 40;
+                }
+
+                // 3. Check for gibberish/length (DGA detection)
+                const mainDomain = hostname.split('.').slice(-2, -1)[0] || "";
+                if (mainDomain.length > 20) riskScore += 30;
+                if (/[0-9]{3,}/.test(mainDomain)) riskScore += 20; // Multiple numbers in domain
+
+                // 4. Insecure Protocol
+                if (protocol === 'http:') riskScore += 30;
+
+                // 5. Known Safe List (Overrides)
+                const isKnownSafe = hostname.includes('chatgpt.com') ||
+                    hostname.includes('gemini.google.com') ||
+                    hostname.includes('anthropic.com') ||
+                    hostname.includes('google.com') ||
+                    hostname.includes('microsoft.com') ||
+                    hostname.includes('github.com');
+
+                if (isKnownSafe) {
+                    setSiteSafety('secure');
+                } else if (riskScore >= 50) {
+                    setSiteSafety('suspicious');
+                    showToast("🚨 PHISHING ALERT: This site shows patterns of credential theft or typosquatting. Ryzen AI has engaged extra hardening.", "warn");
+                } else {
+                    setSiteSafety('secure');
+                }
+            } catch (e) {
+                setSiteSafety('unknown');
             }
         };
 

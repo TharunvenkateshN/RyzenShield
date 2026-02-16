@@ -118,3 +118,10 @@ class VaultManager:
         cursor.execute("SELECT real_val FROM mappings WHERE id = ?", (mapping_id,))
         row = cursor.fetchone()
         return row["real_val"] if row else None
+
+    def get_real_by_fake(self, fake_val: str):
+        """Retrieves the real value given its shadow token."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT real_val FROM mappings WHERE fake_val = ? ORDER BY id DESC LIMIT 1", (fake_val,))
+        row = cursor.fetchone()
+        return row["real_val"] if row else None

@@ -4,6 +4,7 @@ import LatencyVsCloud from './components/LatencyVsCloud';
 import RealTimeLog from './components/RealTimeLog';
 import DashboardStats from './components/DashboardStats';
 import SecureBrowser from './components/SecureBrowser'; // Import Browser
+import DataVault from './components/DataVault';
 import { LayoutDashboard, Globe, Cpu, Settings, Lock, Activity, ShieldCheck } from 'lucide-react';
 
 function App() {
@@ -142,9 +143,9 @@ function App() {
                         <SecureBrowser />
                     </div>
 
-                    {/* Placeholders for other tabs */}
+                    {/* Data Vault Tab */}
                     {activeTab === 'vault' && (
-                        <div className="flex items-center justify-center h-full text-neutral-500">Vault UI Coming Soon</div>
+                        <DataVault />
                     )}
                     {activeTab === 'settings' && (
                         <div className="flex items-center justify-center h-full text-neutral-500">Settings UI Coming Soon</div>

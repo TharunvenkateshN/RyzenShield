@@ -105,3 +105,16 @@ class VaultManager:
                 "hygiene_score": 500,
                 "hygiene_grade": "B"
             }
+
+    def get_all_mappings(self, limit=100):
+        """Fetches all stored PII mappings."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id, session_id, real_val, fake_val, type, created_at FROM mappings ORDER BY id DESC LIMIT ?", (limit,))
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_real_value(self, mapping_id: int):
+        """Retrieves the original value for a specific mapping."""
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT real_val FROM mappings WHERE id = ?", (mapping_id,))
+        row = cursor.fetchone()
+        return row["real_val"] if row else None

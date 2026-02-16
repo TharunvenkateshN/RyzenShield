@@ -18,8 +18,17 @@ class PIIScanner:
             "PHONE": r"\b(?:\+?\d{1,3}[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}\b",
             "API_KEY": r"(sk-[a-zA-Z0-9]{32,})",
             "SSN": r"\b\d{3}-\d{2}-\d{4}\b",
-            "IPV4": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"
+            "IPV4": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",
+            "AWS_KEY": r"(AKIA[0-9A-Z]{16})",
+            "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", # Slack/Generic
+            "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})"
         }
+        
+        # 2. Institutional/Confidential Keywords
+        self.confidential_keywords = [
+            "CONFIDENTIAL", "INTERNAL ONLY", "PROPRIETARY", "DRAFT PAPER", 
+            "RESEARCH CODE", "DO NOT SHARE", "NDA", "RESTRICTED", "PASSWORD:"
+        ]
         
         # 2. SpaCy NER Labels to target
         self.ner_labels = ["PERSON", "ORG", "GPE", "Loc"] 
@@ -62,6 +71,23 @@ class PIIScanner:
                             "method": "ner"
                         })
                         seen_values.add(ent.text)
+
+        # Phase 3: Confidential Keyword Scan
+        for kw in self.confidential_keywords:
+            if kw.upper() in text.upper():
+                # Find all occurrences
+                matches = re.finditer(re.escape(kw), text, re.IGNORECASE)
+                for m in matches:
+                    val = m.group()
+                    if val not in seen_values:
+                        findings.append({
+                            "type": "CONFIDENTIAL",
+                            "value": val,
+                            "start": m.start(),
+                            "end": m.end(),
+                            "method": "keyword"
+                        })
+                        seen_values.add(val)
         
         return findings
 

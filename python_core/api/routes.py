@@ -26,6 +26,24 @@ async def get_logs():
     except Exception as e:
         return [{"message": f"Error fetching logs: {e}", "event_type": "ERROR"}]
 
+@router.get("/vault/mappings")
+async def get_vault_mappings():
+    """Returns all PII mappings for the Data Vault view."""
+    try:
+        return vault.get_all_mappings()
+    except Exception as e:
+        print(f"[Vault] Error fetching mappings: {e}")
+        return []
+
+@router.get("/vault/reveal/{mapping_id}")
+async def reveal_mapping(mapping_id: int):
+    """Reveals the real value for a specific mapping (Admin/Local only)."""
+    try:
+        real_val = vault.get_real_value(mapping_id)
+        return {"real_val": real_val}
+    except Exception as e:
+        return {"error": str(e)}
+
 from python_core.ai_engine.pii_scanner import PIIScanner
 from python_core.ai_engine.inference import AIInferenceEngine
 

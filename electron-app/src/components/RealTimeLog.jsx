@@ -7,15 +7,18 @@ const RealTimeLog = () => {
     useEffect(() => {
         const fetchLogs = async () => {
             try {
-                const res = await fetch('http://localhost:8000/logs');
+                const res = await fetch('http://127.0.0.1:9000/logs');
                 if (res.ok) {
                     const data = await res.json();
                     // Maps backend DB rows to UI format if needed, or use directly
                     // Backend returns: { event_type, message, timestamp }
                     setLogs(data);
+                    if (data.length > 0) {
+                        console.log(`[RyzenShield] Received ${data.length} log entries`);
+                    }
                 }
             } catch (err) {
-                console.error("Failed to fetch logs:", err);
+                // Silently handle - avoids console spam if backend is still starting
             }
         };
 

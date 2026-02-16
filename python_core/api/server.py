@@ -12,6 +12,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def log_requests(request, call_next):
+    print(f"[API] Request: {request.method} {request.url}")
+    response = await call_next(request)
+    # 🛡️ Allow Private Network Access (PNA) for Electron Secure Browser to talk to Localhost
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
+
 app.include_router(router)
 
 @app.on_event("startup")
@@ -21,4 +30,4 @@ async def startup_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=9000)

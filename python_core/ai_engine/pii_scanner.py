@@ -15,7 +15,7 @@ class PIIScanner:
         # 1. Regex Patterns for Rigid PII
         self.regex_patterns = {
             "EMAIL": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
-            "PHONE": r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b",
+            "PHONE": r"\b(?:\+?\d{1,3}[-. ]?)?\(?\d{3}\)?[-. ]?\d{3}[-. ]?\d{4}\b",
             "API_KEY": r"(sk-[a-zA-Z0-9]{32,})",
             "SSN": r"\b\d{3}-\d{2}-\d{4}\b",
             "IPV4": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b"

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SecureBrowser = () => {
@@ -322,17 +322,55 @@ const SecureBrowser = () => {
                         </div>
                     </div>
 
-                    {/* Protection Toggles - Cinematic */}
-                    <div className="hidden lg:flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-neutral-800/60 order-3 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-                        <div className="px-2 py-1 text-[8px] font-black text-neutral-600 uppercase tracking-tighter border-r border-neutral-800/60 mr-1">Shield</div>
-                        <ModeBtn active={protectionMode === 'consent'} onClick={() => setProtectionMode('consent')} label="CONSENT" />
-                        <ModeBtn active={protectionMode === 'auto'} onClick={() => setProtectionMode('auto')} label="AUTO" />
-                    </div>
+                    {/* Protection Toggles - Neural Cluster */}
+                    <div className="hidden lg:flex items-center gap-6 order-3 px-4 py-2 bg-black/40 border border-neutral-800/60 rounded-[1.5rem] backdrop-blur-2xl shadow-2xl">
 
-                    <div className="hidden lg:flex items-center gap-1 bg-black/50 p-1 rounded-xl border border-neutral-800/60 order-4 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
-                        <div className="px-2 py-1 text-[8px] font-black text-neutral-600 uppercase tracking-tighter border-r border-neutral-800/60 mr-1">Shadow</div>
-                        <ModeBtn active={rehydrateEnabled} onClick={() => setRehydrateEnabled(true)} label="ON" />
-                        <ModeBtn active={!rehydrateEnabled} onClick={() => setRehydrateEnabled(false)} label="OFF" />
+                        {/* Input Privacy (Shield) */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex flex-col items-end mr-1">
+                                <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest leading-none mb-1">Sensitive</span>
+                                <span className="text-[9px] font-black text-orange-500 uppercase tracking-[0.2em] leading-none">Shadow</span>
+                            </div>
+                            <div className="flex items-center p-1 bg-white/[0.03] rounded-xl border border-white/5">
+                                <IconButton
+                                    active={protectionMode === 'consent'}
+                                    onClick={() => setProtectionMode('consent')}
+                                    icon={UserCheck}
+                                    color="orange"
+                                />
+                                <IconButton
+                                    active={protectionMode === 'auto'}
+                                    onClick={() => setProtectionMode('auto')}
+                                    icon={Cpu}
+                                    color="orange"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Middle Divider */}
+                        <div className="w-[1px] h-6 bg-gradient-to-b from-transparent via-neutral-800 to-transparent" />
+
+                        {/* Output Reality (Shadow) */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex flex-col items-start ml-1 order-2">
+                                <span className="text-[7px] font-black text-neutral-600 uppercase tracking-widest leading-none mb-1">Personal</span>
+                                <span className="text-[9px] font-black text-cyan-500 uppercase tracking-[0.2em] leading-none">Reveal</span>
+                            </div>
+                            <div className="flex items-center p-1 bg-white/[0.03] rounded-xl border border-white/5 order-1">
+                                <IconButton
+                                    active={rehydrateEnabled}
+                                    onClick={() => setRehydrateEnabled(true)}
+                                    icon={Eye}
+                                    color="cyan"
+                                />
+                                <IconButton
+                                    active={!rehydrateEnabled}
+                                    onClick={() => setRehydrateEnabled(false)}
+                                    icon={EyeOff}
+                                    color="cyan"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -364,6 +402,26 @@ const SecureBrowser = () => {
         </div>
     );
 };
+
+const IconButton = ({ active, onClick, icon: Icon, color }) => (
+    <button
+        onClick={onClick}
+        className={`p-2 rounded-xl transition-all relative ${active
+            ? (color === 'orange' ? 'text-orange-500 bg-orange-500/10' : 'text-cyan-400 bg-cyan-400/10')
+            : 'text-neutral-600 hover:text-neutral-400'
+            }`}
+    >
+        {active && (
+            <motion.div
+                layoutId={`active-tab-${color}`}
+                className={`absolute inset-0 rounded-xl border-2 ${color === 'orange' ? 'border-orange-500/50' : 'border-cyan-400/50'}`}
+                initial={false}
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+        )}
+        <Icon size={14} className="relative z-10" />
+    </button>
+);
 
 const NavBtn = ({ icon: Icon, onClick }) => (
     <button

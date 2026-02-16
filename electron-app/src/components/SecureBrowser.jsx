@@ -5,205 +5,145 @@ const SecureBrowser = () => {
     const [url, setUrl] = useState('https://example.com');
     const [isLoading, setIsLoading] = useState(false);
     const [injected, setInjected] = useState(false);
+    const [toast, setToast] = useState({ show: false, message: '', type: '' });
+    const [protectionMode, setProtectionMode] = useState('consent'); // 'consent' or 'auto'
     const webviewRef = useRef(null);
     const containerRef = useRef(null);
 
+    const showToast = (message, type = 'info') => {
+        setToast({ show: true, message, type });
+        setTimeout(() => setToast({ show: false, message: '', type: '' }), 5000);
+    };
+
     // Inject the interception script when webview loads
     useEffect(() => {
-        // Create webview element imperatively to avoid React re-render issues
         const container = containerRef.current;
-        if (!container) {
-            console.error("[RyzenShield] Container ref is null");
-            return;
-        }
+        if (!container) return;
 
-        // Create the webview element
         const webview = document.createElement('webview');
         webview.id = 'ryzen-webview';
         webview.src = url;
         webview.style.width = '100%';
         webview.style.height = '100%';
         webview.setAttribute('allowpopups', '');
-        webview.setAttribute('disablewebsecurity', ''); // BYPASS CSP for demo prototype
+        webview.setAttribute('disablewebsecurity', '');
         webview.setAttribute('webpreferences', 'contextIsolation=no');
 
         container.appendChild(webview);
         webviewRef.current = webview;
 
-        console.log("[RyzenShield] Setting up webview listeners");
-
         const injectScript = () => {
-            console.log("[RyzenShield] DOM Ready - Attempting script injection");
-
             const scriptCode = `
                 (function() {
-                    console.log("[RyzenShield] 🛡️ Injection script executing");
+                    if (window.__RyzenShieldHooked) return;
+                    window.__RyzenShieldHooked = true;
                     
-                    // Test if we can access window
-                    if (typeof window === 'undefined') {
-                        console.error("[RyzenShield] Window object not available!");
-                        return;
-                    }
-                    
-                    console.log("[RyzenShield] Window object available, hooking fetch...");
-                    
-                    // Hook FETCH
+                    window.__RyzenShieldMode = "${protectionMode}";
+
                     const originalFetch = window.fetch;
                     window.fetch = async function(...args) {
-                        console.log("[RyzenShield] FETCH INTERCEPTED!", args);
-                        
                         let [resource, config] = args;
                         const url = typeof resource === 'string' ? resource : resource.url;
-
-                        // GUARD: Don't intercept our own scan API (Infinite Loop Prevention)
-                        if (url.includes('9000/process_text')) {
-                            return originalFetch.apply(this, args);
-                        }
+                        if (url.includes('9000/process_text')) return originalFetch.apply(this, args);
                         
                         if (config && config.method === 'POST' && config.body) {
-                            console.log("[RyzenShield] POST request detected, body:", config.body);
-                            
                             try {
                                 if (config.body instanceof Uint8Array || config.body instanceof ArrayBuffer || config.body instanceof Blob) {
-                                    return originalFetch.apply(this, args); // Skip binary data
+                                    return originalFetch.apply(this, args);
                                 }
-
                                 const bodyText = typeof config.body === 'string' ? config.body : config.body.toString();
                                 
-                                // SKIP if too long or looks like garbage
-                                if (bodyText.length > 50000 || bodyText.includes('31,139,8,0')) {
-                                     return originalFetch.apply(this, args);
-                                }
-
-                                console.log("[RyzenShield] Sending to scan API:", bodyText.substring(0, 100));
-                                
-                                // Use sync XHR to block the request
                                 const scanXHR = new XMLHttpRequest();
                                 scanXHR.open('POST', 'http://127.0.0.1:9000/process_text', false);
                                 scanXHR.setRequestHeader('Content-Type', 'application/json');
                                 scanXHR.send(JSON.stringify({ text: bodyText }));
                                 
-                                console.log("[RyzenShield] Scan response status:", scanXHR.status);
-                                
                                 if (scanXHR.status === 200) {
                                     const result = JSON.parse(scanXHR.responseText);
-                                    console.log("[RyzenShield] Scan result:", result);
-                                    
                                     if (result.sanitized) {
-                                        console.log("[RyzenShield] 🛡️ PII DETECTED & SANITIZED!");
-                                        config.body = result.text;
+                                        let shouldSanitize = true;
+                                        if (window.__RyzenShieldMode === 'consent') {
+                                            shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information (Email/Key/Phone) in your request.\\n\\nWould you like RyzenShield to sanitize this data before sending?\\n\\n[Click OK to Protect, Cancel to allow raw data]");
+                                        }
+
+                                        if (shouldSanitize) {
+                                            config.body = result.text;
+                                            window.console.log("[RyzenShield-Event]:pii-detected");
+                                        } else {
+                                            window.console.log("[RyzenShield-Event]:pii-allowed-by-user");
+                                        }
                                     }
                                 }
-                            } catch (err) {
-                                console.error("[RyzenShield] Scan failed:", err);
-                            }
+                            } catch (err) {}
                         }
-                        
                         return originalFetch.apply(this, args);
                     };
                     
-                    console.log("[RyzenShield] ✅ Fetch hook installed successfully");
-                    
-                    // Also hook XHR
-                    const originalOpen = XMLHttpRequest.prototype.open;
                     const originalSend = XMLHttpRequest.prototype.send;
-                    
-                    XMLHttpRequest.prototype.open = function(method, url) {
-                        this._method = method;
-                        this._url = url;
-                        // GUARD: Loop prevention
-                        this._isScanRequest = url.includes('9000/process_text');
-                        return originalOpen.apply(this, arguments);
-                    };
-                    
                     XMLHttpRequest.prototype.send = function(body) {
                         if (this._method === 'POST' && body && !this._isScanRequest) {
-                            console.log("[RyzenShield] XHR POST intercepted:", body);
-                            
                             try {
                                 const scanXHR = new XMLHttpRequest();
                                 scanXHR.open('POST', 'http://127.0.0.1:9000/process_text', false);
                                 scanXHR.setRequestHeader('Content-Type', 'application/json');
                                 
-                                if (body instanceof Uint8Array || body instanceof ArrayBuffer || body instanceof Blob) {
-                                     return originalSend.apply(this, arguments); // Skip binary
-                                }
-
                                 let textToSend = typeof body === 'string' ? body : body.toString();
-                                if (typeof body === 'object' && !(body instanceof FormData)) {
-                                    try { textToSend = JSON.stringify(body); } catch(e) {}
-                                }
-                                
-                                // Skip binary/gzip markers (e.g. 31,139 is GZIP)
-                                if (textToSend.includes('31,139,8,0') || textToSend.length > 50000) {
-                                    return originalSend.apply(this, arguments);
-                                }
-                                
                                 scanXHR.send(JSON.stringify({ text: textToSend }));
                                 
                                 if (scanXHR.status === 200) {
                                     const result = JSON.parse(scanXHR.responseText);
                                     if (result.sanitized) {
-                                        console.log("[RyzenShield] 🛡️ XHR PII Sanitized!");
-                                        arguments[0] = result.text;
+                                        let shouldSanitize = true;
+                                        if (window.__RyzenShieldMode === 'consent') {
+                                            shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information in this XHR request.\\n\\nSanitize with Ryzen AI for your safety?\\n\\n[Click OK for Santization]");
+                                        }
+                                        
+                                        if (shouldSanitize) {
+                                            arguments[0] = result.text;
+                                            window.console.log("[RyzenShield-Event]:pii-detected");
+                                        }
                                     }
                                 }
-                            } catch (e) {
-                                console.error("[RyzenShield] XHR scan failed:", e);
-                            }
+                            } catch (e) {}
                         }
                         return originalSend.apply(this, arguments);
                     };
-                    
-                    console.log("[RyzenShield] ✅ XHR hook installed successfully");
+
+                    const originalOpen = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function(method, url) {
+                        this._method = method;
+                        this._isScanRequest = url.includes('9000/process_text');
+                        return originalOpen.apply(this, arguments);
+                    };
                 })();
             `;
-
             try {
                 webview.executeJavaScript(scriptCode);
-                console.log("[RyzenShield] ✅ Script injection completed");
                 setInjected(true);
-            } catch (error) {
-                console.error("[RyzenShield] ❌ Script injection failed:", error);
-            }
+            } catch (error) { }
         };
 
-        // Listen for various webview events
-        const onDomReady = () => {
-            console.log("[RyzenShield] Webview DOM ready event fired");
-            injectScript();
-        };
-
-        const onDidFinishLoad = () => {
-            console.log("[RyzenShield] Webview did-finish-load event fired");
-            // Inject again to be safe
-            setTimeout(injectScript, 100);
-        };
+        const onDomReady = () => injectScript();
+        const onDidFinishLoad = () => setTimeout(injectScript, 500);
 
         const onConsoleMessage = (e) => {
+            if (e.message.includes("[RyzenShield-Event]:pii-detected")) {
+                showToast("AMD Ryzen AI: Sanitization Successful! Your real data was never sent.", "success");
+            }
+            if (e.message.includes("[RyzenShield-Event]:pii-allowed-by-user")) {
+                showToast("AMD Ryzen AI Warning: PII was sent based on your consent. Be careful!", "warn");
+            }
             console.log('[Webview Console]:', e.message);
         };
 
-        const onDidStartLoading = () => {
-            console.log('[RyzenShield] Webview started loading');
-            setIsLoading(true);
-        };
-
-        const onDidStopLoading = () => {
-            console.log('[RyzenShield] Webview stopped loading');
-            setIsLoading(false);
-        };
-
-        const onDidFailLoad = (e) => {
-            console.error('[RyzenShield] Webview failed to load:', e);
-        };
+        const onDidStartLoading = () => setIsLoading(true);
+        const onDidStopLoading = () => setIsLoading(false);
 
         webview.addEventListener('dom-ready', onDomReady);
         webview.addEventListener('did-finish-load', onDidFinishLoad);
         webview.addEventListener('console-message', onConsoleMessage);
         webview.addEventListener('did-start-loading', onDidStartLoading);
         webview.addEventListener('did-stop-loading', onDidStopLoading);
-        webview.addEventListener('did-fail-load', onDidFailLoad);
 
         return () => {
             webview.removeEventListener('dom-ready', onDomReady);
@@ -211,21 +151,16 @@ const SecureBrowser = () => {
             webview.removeEventListener('console-message', onConsoleMessage);
             webview.removeEventListener('did-start-loading', onDidStartLoading);
             webview.removeEventListener('did-stop-loading', onDidStopLoading);
-            webview.removeEventListener('did-fail-load', onDidFailLoad);
-
-            // Remove webview element on cleanup
-            if (container.contains(webview)) {
-                container.removeChild(webview);
-            }
+            if (container.contains(webview)) container.removeChild(webview);
         };
-    }, []);
+    }, [protectionMode]);
 
     const handleNavigate = (e) => {
         if (e.key === 'Enter' && webviewRef.current) {
             let target = url;
             if (!target.startsWith('http')) target = 'https://' + target;
             webviewRef.current.loadURL(target);
-            setInjected(false); // Reset injection status
+            setInjected(false);
         }
     };
 
@@ -237,7 +172,29 @@ const SecureBrowser = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#111] rounded-xl overflow-hidden border border-neutral-800">
+        <div className="flex flex-col h-full bg-[#111] rounded-xl overflow-hidden border border-neutral-800 relative">
+            {/* Privacy Education Toast */}
+            {toast.show && (
+                <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-top-4 duration-300">
+                    <div className={`${toast.type === 'warn' ? 'bg-red-600/90 border-red-400' : 'bg-orange-600/90 border-orange-400'} backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl border flex items-start gap-4 max-w-md`}>
+                        <div className="bg-white/20 p-2 rounded-lg mt-0.5">
+                            <ShieldCheck size={20} className="text-white" />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">
+                                {toast.type === 'warn' ? 'Privacy Warning' : 'Digital Hygiene Alert'}
+                            </h4>
+                            <p className="text-xs text-orange-50 leading-relaxed font-medium">
+                                {toast.message}
+                            </p>
+                        </div>
+                        <button onClick={() => setToast({ ...toast, show: false })} className="hover:bg-white/10 p-1 rounded">
+                            <RefreshCw size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Browser Toolbar */}
             <div className="flex items-center gap-3 p-3 bg-neutral-900 border-b border-neutral-800">
                 <div className="flex gap-1">
@@ -265,6 +222,22 @@ const SecureBrowser = () => {
                         onChange={(e) => setUrl(e.target.value)}
                         onKeyDown={handleNavigate}
                     />
+                </div>
+
+                {/* Consent Mode Toggle */}
+                <div className="flex items-center gap-2 bg-neutral-800/50 p-1 rounded-lg border border-neutral-700">
+                    <button
+                        onClick={() => setProtectionMode('consent')}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${protectionMode === 'consent' ? 'bg-orange-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    >
+                        CONSENT-FIRST
+                    </button>
+                    <button
+                        onClick={() => setProtectionMode('auto')}
+                        className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${protectionMode === 'auto' ? 'bg-orange-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    >
+                        AUTO-SHIELD
+                    </button>
                 </div>
             </div>
 

@@ -80,4 +80,4 @@ Ryzen Shield is built on the principle of **Inherent Privacy**. We believe that 
 
 ---
 
-*Developed for the **AMD Slingshot Hackathon 2024**.*
+*Developed for the **AMD Slingshot Hackathon 2026**.*

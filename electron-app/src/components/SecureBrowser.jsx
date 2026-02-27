@@ -50,29 +50,38 @@ const SecureBrowser = () => {
                     
                     window.__RyzenShieldMode = "${protectionMode}";
 
+                    const IGNORE_ENDPOINTS = ['/events', '/analytics', '/log', '/metrics', '/telemetry', '/cdn-cgi', '/status', '/ping'];
+                    const isTelemetry = (urlStr) => {
+                        if (!urlStr) return false;
+                        return IGNORE_ENDPOINTS.some(i => urlStr.includes(i));
+                    };
+
                     const originalFetch = window.fetch;
                     window.fetch = async function(...args) {
                         let [resource, config] = args;
-                        const url = typeof resource === 'string' ? resource : resource.url;
+                        const url = typeof resource === 'string' ? resource : resource?.url;
                         
-                        if (url.includes('9000/')) return originalFetch(...args);
+                        if (url && (url.includes('9000/') || isTelemetry(url))) return originalFetch(...args);
                         
                         if (config && config.method === 'POST' && config.body) {
                             try {
-                                if (!(config.body instanceof Uint8Array || config.body instanceof ArrayBuffer || config.body instanceof Blob)) {
-                                    let bodyText = config.body;
-                                    if (typeof bodyText === 'object') {
-                                        try { bodyText = JSON.stringify(bodyText); } catch(e) {}
-                                    }
-                                    bodyText = bodyText.toString();
+                                let bodyText = '';
+                                if (typeof config.body === 'string') {
+                                    bodyText = config.body;
+                                } else if (config.body instanceof TextDecoder || config.body.toString() === '[object Object]') {
+                                    try { bodyText = JSON.stringify(config.body); } catch(e) {}
+                                }
+                                
+                                if (bodyText && bodyText.length > 0) {
+                                    // Use async fetch instead of synchronous XHR to avoid freezing!
+                                    const scanRes = await originalFetch('http://127.0.0.1:9000/process_text', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ text: bodyText })
+                                    }).catch(e => null);
                                     
-                                    const scanXHR = new XMLHttpRequest();
-                                    scanXHR.open('POST', 'http://127.0.0.1:9000/process_text', false);
-                                    scanXHR.setRequestHeader('Content-Type', 'application/json');
-                                    scanXHR.send(JSON.stringify({ text: bodyText }));
-                                    
-                                    if (scanXHR.status === 200) {
-                                        const result = JSON.parse(scanXHR.responseText);
+                                    if (scanRes && scanRes.ok) {
+                                        const result = await scanRes.json();
                                         if (result.sanitized) {
                                             let shouldSanitize = true;
                                             if (window.__RyzenShieldMode === 'consent') {
@@ -81,43 +90,58 @@ const SecureBrowser = () => {
 
                                             if (shouldSanitize) {
                                                 console.log("[RyzenShield] 🛡️ Shadowing PII with Tokens");
-                                                config.body = result.text;
+                                                config.body = result.text; // Mutate payload
                                             }
                                         }
                                     }
                                 }
-                            } catch (err) {}
+                            } catch (err) {
+                                console.error("[RyzenShield] Intercept Error: ", err);
+                            }
                         }
                         
                         const response = await originalFetch(resource, config);
                         
                         // 🛡️ RE-HYDRATION (Only if enabled)
-                        if (${rehydrateEnabled} && response.ok && !url.includes('9000/')) {
-                            const clone = response.clone();
-                            try {
-                                const text = await clone.text();
-                                if (text.includes('[RS-')) {
-                                    const reXHR = new XMLHttpRequest();
-                                    reXHR.open('POST', 'http://127.0.0.1:9000/vault/rehydrate', false);
-                                    reXHR.setRequestHeader('Content-Type', 'application/json');
-                                    reXHR.send(JSON.stringify({ text }));
-                                    if (reXHR.status === 200) {
-                                        const res = JSON.parse(reXHR.responseText);
-                                        if (res.replaced > 0) {
-                                            console.log("[RyzenShield] 💎 Re-hydrated Shadow Tokens locally");
-                                            const blob = new Blob([res.text], { type: response.headers.get('content-type') });
-                                            return new Response(blob, { status: response.status, headers: response.headers });
+                        if (${rehydrateEnabled} && response.ok && url && !url.includes('9000/')) {
+                            const contentType = response.headers.get('content-type') || '';
+                            // DO NOT attempt to buffer and rehydrate Server-Sent Events (SSE) streams, it blocks the fetch!
+                            if (!contentType.includes('text/event-stream')) {
+                                const clone = response.clone();
+                                try {
+                                    const text = await clone.text();
+                                    if (text.includes('[RS-')) {
+                                        const reXHR = new XMLHttpRequest();
+                                        reXHR.open('POST', 'http://127.0.0.1:9000/vault/rehydrate', false);
+                                        reXHR.setRequestHeader('Content-Type', 'application/json');
+                                        reXHR.send(JSON.stringify({ text }));
+                                        if (reXHR.status === 200) {
+                                            const res = JSON.parse(reXHR.responseText);
+                                            if (res.replaced > 0) {
+                                                console.log("[RyzenShield] 💎 Re-hydrated Shadow Tokens locally");
+                                                const blob = new Blob([res.text], { type: contentType || 'text/plain' });
+                                                return new Response(blob, { status: response.status, headers: response.headers });
+                                            }
                                         }
                                     }
-                                }
-                            } catch (e) {}
+                                } catch (e) {}
+                            }
                         }
+                        
                         return response;
                     };
                     
+                    const originalOpen = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function(method, url) {
+                        this._rsMethod = method;
+                        this._rsUrl = url;
+                        return originalOpen.apply(this, arguments);
+                    };
+
                     const originalSend = XMLHttpRequest.prototype.send;
                     XMLHttpRequest.prototype.send = function(body) {
-                        if (this._method === 'POST' && body && !this._isScanRequest) {
+                        const url = this._rsUrl || '';
+                        if (this._rsMethod === 'POST' && body && !url.includes('9000/') && !isTelemetry(url)) {
                             try {
                                 let bodyText = body;
                                 if (typeof bodyText === 'object') {
@@ -213,6 +237,7 @@ const SecureBrowser = () => {
         webview.addEventListener('did-start-loading', () => setIsLoading(true));
         webview.addEventListener('did-stop-loading', handleLoad);
         webview.addEventListener('console-message', (e) => {
+            console.log(`[Webview] ${e.message}`);
             if (e.message.includes('pii-detected')) {
                 showToast("PII detected! Ryzen AI sanitized the payload before it left your device.", "warn");
             }

@@ -60,6 +60,9 @@ function createWindow() {
                 delete responseHeaders['Content-Security-Policy'];
                 callback({ cancel: false, responseHeaders });
             });
+            contents.on('console-message', (e, level, message, line, sourceId) => {
+                console.log(`[WebView Console] ${message}`);
+            });
         }
     });
 

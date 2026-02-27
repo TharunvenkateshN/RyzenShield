@@ -22,13 +22,14 @@ class PIIScanner:
             "AWS_KEY": r"(AKIA[0-9A-Z]{16})",
             "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", 
             "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})",
+            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret)[\s:=]+([A-Za-z0-9@#$%^&!*_-]{5,})", # Captures password labels + string
             "BUDGET": r"\$\d+(?:\.\d+)?(?:k|m|b)?\b" # Catch $50k, $1000, etc.
         }
         
         # 2. Institutional/Confidential Keywords
         self.confidential_keywords = [
             "CONFIDENTIAL", "INTERNAL ONLY", "PROPRIETARY", "DRAFT PAPER", 
-            "RESEARCH CODE", "DO NOT SHARE", "NDA", "RESTRICTED", "PASSWORD:",
+            "RESEARCH CODE", "DO NOT SHARE", "NDA", "RESTRICTED",
             "PRIVATE KEY", "SECRET KEY" # Added for context
         ]
         
@@ -106,6 +107,7 @@ class PIIScanner:
         if pii_type == "PERSON": return f"[{prefix}-USER-{suffix}]"
         if pii_type == "ORG": return f"[{prefix}-ORG-{suffix}]"
         if pii_type == "GPE": return f"[{prefix}-LOC-{suffix}]"
+        if pii_type == "CREDENTIAL": return f"[{prefix}-CREDS-{suffix}]"
         if pii_type == "CONFIDENTIAL": return f"[{prefix}-DATA-{suffix}]"
         
         return f"[{prefix}-SECRET-{suffix}]"

@@ -21,13 +21,13 @@ In the world of AI security, every millisecond counts. Conventional PII filterin
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features (AMD Slingshot Hackathon Edition)
 
-- **🔍 Hybrid PII Scanning**: Combines high-speed Regex patterns with deep SpaCy NLP (Named Entity Recognition) to detect Emails, API Keys, Passwords, and more.
-- **🛡️ Secure Browser Integration**: Intercepts input in real-time, preventing sensitive data from being leaked to LLMs or web forms.
-- **🎭 Hardware Shadow Tokens**: Automatically masks PII with "Shadow Tokens" (e.g., `[RS-MAIL-01]`) for zero-knowledge interactions.
-- **⚡ XDNA Accelerated**: Optimized for AMD Ryzen AI NPUs to ensure the security layer doesn't slow down your workflow.
-- **📊 Live Hardware Pulse**: Real-time dashboard showing NPU utilization and latency comparisons.
+- **🔍 Code-Aware Hybrid PII Engine**: Combines high-speed Regex patterns with deep SpaCy NLP and custom programming heuristics to accurately detect Entities, API Keys, and Passwords while ignoring false-positives in source code.
+- **🛡️ Secure Browser Integration**: Intercepts fetch/XHR inputs in real-time. If you paste a password into ChatGPT, the NPU blocks it locally before it hits the network.
+- **🎭 Digital Hygiene Companion**: An active defense module for students. Before signing up for untrusted college club services or sketchy websites, the NPU synthesizes a hyper-realistic, safe "Burner Persona" (fake dorm, alias email) to protect real university identities.
+- **🗄️ Zero-Trust Document Sanitizer**: Drop `.txt`, `.csv`, or `.md` files into the local vault. The NPU scans the entire document locally in milliseconds, physically redacts the sensitive text, and produces a clean, safe-to-share file with a side-by-side verification viewer.
+- **⚡ XDNA Accelerated & Hardware Tokens**: Replaces data with trackable "Shadow Tokens" (e.g., `[RS-DATA-01]`) utilizing the Ryzen AI NPU to ensure the security layer operates with zero latency and complete offline privacy.
 
 ---
 

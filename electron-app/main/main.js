@@ -35,8 +35,14 @@ function createWindow() {
     });
 
     // LOAD THE REACT APP
-    const startUrl = 'http://localhost:5173';
-    mainWindow.loadURL(startUrl);
+    if (app.isPackaged) {
+        mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    } else {
+        const startUrl = 'http://localhost:5173';
+        mainWindow.loadURL(startUrl);
+        // Open DevTools in dev mode
+        mainWindow.webContents.openDevTools();
+    }
 
     // 🛡️ [RyzenShield] FORCE CSP STRIPPING
     // This allows the Secure Browser to talk to the local AI Engine (127.0.0.1:9000)
@@ -66,8 +72,7 @@ function createWindow() {
         }
     });
 
-    // Open DevTools in dev mode
-    mainWindow.webContents.openDevTools();
+    // DevTools are conditionally opened in dev mode above
 
     // 🪟 WINDOW CONTROLS
     ipcMain.on('window-minimize', () => mainWindow.minimize());

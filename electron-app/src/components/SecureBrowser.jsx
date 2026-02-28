@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff, UserPlus, Info, Check, Copy, Mic } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff, UserPlus, Info, Check, Copy, Mic, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const SecureBrowser = () => {
-    const [url, setUrl] = useState('https://chatgpt.com');
-    const [inputUrl, setInputUrl] = useState('https://chatgpt.com');
+const BrowserInstance = ({ isActive, initialUrl = 'https://chatgpt.com', onTitleChange }) => {
+    const [url, setUrl] = useState(initialUrl);
+    const [inputUrl, setInputUrl] = useState(initialUrl);
     const [isLoading, setIsLoading] = useState(false);
     const [injected, setInjected] = useState(false);
     const [siteSafety, setSiteSafety] = useState('secure'); // 'secure', 'suspicious', 'unknown'
@@ -199,6 +199,10 @@ const SecureBrowser = () => {
                 const hostname = urlObj.hostname.toLowerCase();
                 const protocol = urlObj.protocol;
 
+                if (onTitleChange) {
+                    onTitleChange(webview.getTitle() || hostname);
+                }
+
                 // 🛡️ Ryzen AI Phishing Detection Engine
                 const suspiciousPatterns = [
                     'free-ai', 'openai-login', 'chat-gpt', 'gemini-bonus',
@@ -359,7 +363,7 @@ const SecureBrowser = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-neutral-800/60 shadow-2xl relative">
+        <div className={`flex flex-col absolute inset-0 bg-[#0c0c0c] ${isActive ? 'flex' : 'hidden'}`}>
 
             {/* Cinematic Toast Notifications */}
             <AnimatePresence>
@@ -771,5 +775,71 @@ const ModeBtn = ({ active, onClick, label }) => (
         {label}
     </button>
 );
+
+const SecureBrowser = () => {
+    const [tabs, setTabs] = useState([{ id: 1, title: 'Ryzen Sandbox', url: 'https://chatgpt.com' }]);
+    const [activeTabId, setActiveTabId] = useState(1);
+
+    const addTab = () => {
+        const newId = Date.now();
+        setTabs([...tabs, { id: newId, title: 'New Tab', url: 'https://google.com' }]);
+        setActiveTabId(newId);
+    };
+
+    const closeTab = (e, id) => {
+        e.stopPropagation();
+        if (tabs.length === 1) return;
+        const newTabs = tabs.filter(t => t.id !== id);
+        setTabs(newTabs);
+        if (activeTabId === id) setActiveTabId(newTabs[0].id);
+    };
+
+    return (
+        <div className="flex flex-col h-full bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-neutral-800/60 shadow-2xl relative">
+            {/* Tabs Bar */}
+            <div className="flex items-center bg-[#050505] pt-3 px-4 gap-2 overflow-x-auto border-b border-neutral-800/80 shrink-0">
+                {tabs.map(tab => (
+                    <div
+                        key={tab.id}
+                        onClick={() => setActiveTabId(tab.id)}
+                        className={`group flex items-center gap-2 px-4 py-2.5 rounded-t-2xl cursor-pointer min-w-[140px] max-w-[220px] border-t border-x transition-colors relative
+                            ${activeTabId === tab.id
+                                ? 'bg-[#0c0c0c] border-neutral-800/60 text-white z-10'
+                                : 'bg-transparent border-transparent text-neutral-600 hover:bg-neutral-900/50 hover:text-neutral-400 z-0'}`}
+                    >
+                        <Globe size={12} className={activeTabId === tab.id ? 'text-orange-500' : 'text-neutral-600'} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest truncate flex-1">{tab.title}</span>
+                        <button
+                            onClick={(e) => closeTab(e, tab.id)}
+                            className={`p-1 rounded-md transition-all ${activeTabId === tab.id ? 'opacity-100 hover:bg-neutral-800' : 'opacity-0 group-hover:opacity-100 hover:bg-neutral-800'}`}
+                        >
+                            <X size={12} className="hover:text-red-500" />
+                        </button>
+                    </div>
+                ))}
+                <button
+                    onClick={addTab}
+                    className="p-2 text-neutral-600 hover:text-white hover:bg-neutral-900 rounded-xl transition-all ml-1 mb-1"
+                >
+                    <Plus size={16} />
+                </button>
+            </div>
+
+            {/* Browser Instances Layer */}
+            <div className="flex-1 relative bg-black">
+                {tabs.map(tab => (
+                    <BrowserInstance
+                        key={tab.id}
+                        isActive={activeTabId === tab.id}
+                        initialUrl={tab.url}
+                        onTitleChange={(title) => {
+                            setTabs(ts => ts.map(t => t.id === tab.id ? { ...t, title } : t));
+                        }}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+};
 
 export default SecureBrowser;

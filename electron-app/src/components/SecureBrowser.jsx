@@ -63,6 +63,49 @@ const BrowserInstance = ({ isActive, initialUrl = 'https://chatgpt.com', onTitle
                     window.__RyzenShieldHooked = true;
                     
                     window.__RyzenShieldMode = "${protectionMode}";
+                    
+                    // 🛡️ [RyzenShield] Real-time DOM Shadowing
+                    // Periodically scans the page for shadow tokens and restores them visually for the user.
+                    async function shadowRestoreDOM() {
+                        if (!${rehydrateEnabled}) return;
+                        
+                        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+                        let node;
+                        const tokensToRestore = [];
+                        const nodesToUpdate = [];
+
+                        while (node = walker.nextNode()) {
+                            if (node.textContent.includes('[RS-')) {
+                                tokensToRestore.push(node.textContent);
+                                nodesToUpdate.push(node);
+                            }
+                        }
+
+                        if (tokensToRestore.length > 0) {
+                            try {
+                                const res = await originalFetch('http://127.0.0.1:9000/vault/rehydrate', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ text: tokensToRestore.join(' ||| ') })
+                                });
+                                if (res.ok) {
+                                    const data = await res.json();
+                                    if (data.replaced > 0) {
+                                        const values = data.text.split(' ||| ');
+                                        nodesToUpdate.forEach((node, idx) => {
+                                            if (node.textContent !== values[idx]) {
+                                                node.textContent = values[idx];
+                                            }
+                                        });
+                                    }
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                    
+                    if (${rehydrateEnabled}) {
+                        setInterval(shadowRestoreDOM, 2000);
+                    }
 
                     const IGNORE_ENDPOINTS = ['/events', '/analytics', '/log', '/metrics', '/telemetry', '/cdn-cgi', '/status', '/ping'];
                     const isTelemetry = (urlStr) => {
@@ -82,12 +125,13 @@ const BrowserInstance = ({ isActive, initialUrl = 'https://chatgpt.com', onTitle
                                 let bodyText = '';
                                 if (typeof config.body === 'string') {
                                     bodyText = config.body;
-                                } else if (config.body instanceof TextDecoder || config.body.toString() === '[object Object]') {
+                                } else if (config.body instanceof URLSearchParams) {
+                                    bodyText = config.body.toString();
+                                } else {
                                     try { bodyText = JSON.stringify(config.body); } catch(e) {}
                                 }
                                 
                                 if (bodyText && bodyText.length > 0) {
-                                    // Use async fetch instead of synchronous XHR to avoid freezing!
                                     const scanRes = await originalFetch('http://127.0.0.1:9000/process_text', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
@@ -99,12 +143,19 @@ const BrowserInstance = ({ isActive, initialUrl = 'https://chatgpt.com', onTitle
                                         if (result.sanitized) {
                                             let shouldSanitize = true;
                                             if (window.__RyzenShieldMode === 'consent') {
-                                                shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information (Email/Key/Phone) in your request.\\n\\nWould you like RyzenShield to sanitize this data before sending?\\n\\n[Click OK to Protect, Cancel to allow raw data]");
+                                                shouldSanitize = window.confirm("🛡️ AMD Ryzen AI: PII Detected!\\n\\nWe found sensitive information in your request.\\n\\nShadowing this data locally before AI upload...");
                                             }
 
                                             if (shouldSanitize) {
                                                 console.log("[RyzenShield] 🛡️ Shadowing PII with Tokens");
-                                                config.body = result.text; // Mutate payload
+                                                if (typeof config.body === 'string') {
+                                                    config.body = result.text;
+                                                } else if (config.body instanceof URLSearchParams) {
+                                                    // Re-parse the sanitized string back into URLSearchParams if needed
+                                                    config.body = new URLSearchParams(result.text);
+                                                } else {
+                                                    try { config.body = JSON.parse(result.text); } catch(e) { config.body = result.text; }
+                                                }
                                             }
                                         }
                                     }
@@ -116,25 +167,53 @@ const BrowserInstance = ({ isActive, initialUrl = 'https://chatgpt.com', onTitle
                         
                         const response = await originalFetch(resource, config);
                         
-                        // 🛡️ RE-HYDRATION (Only if enabled)
+                        // 🛡️ SSE & STREAM RE-HYDRATION
                         if (${rehydrateEnabled} && response.ok && url && !url.includes('9000/')) {
                             const contentType = response.headers.get('content-type') || '';
-                            // DO NOT attempt to buffer and rehydrate Server-Sent Events (SSE) streams, it blocks the fetch!
-                            if (!contentType.includes('text/event-stream')) {
+                            if (contentType.includes('text/event-stream') || contentType.includes('application/x-ndjson')) {
+                                // For streams, we wrap the reader to rehydrate on the fly!
+                                const reader = response.body.getReader();
+                                const decoder = new TextDecoder();
+                                const encoder = new TextEncoder();
+                                
+                                const stream = new ReadableStream({
+                                    async pull(controller) {
+                                        const { done, value } = await reader.read();
+                                        if (done) {
+                                            controller.close();
+                                            return;
+                                        }
+                                        let text = decoder.decode(value);
+                                        if (text.includes('[RS-')) {
+                                            const reRes = await originalFetch('http://127.0.0.1:9000/vault/rehydrate', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ text })
+                                            }).catch(e => null);
+                                            if (reRes && reRes.ok) {
+                                                const resData = await reRes.json();
+                                                text = resData.text;
+                                            }
+                                        }
+                                        controller.enqueue(encoder.encode(text));
+                                    }
+                                });
+                                return new Response(stream, { status: response.status, headers: response.headers });
+                            } else {
+                                // Standard JSON/Text rehydration
                                 const clone = response.clone();
                                 try {
                                     const text = await clone.text();
                                     if (text.includes('[RS-')) {
-                                        const reXHR = new XMLHttpRequest();
-                                        reXHR.open('POST', 'http://127.0.0.1:9000/vault/rehydrate', false);
-                                        reXHR.setRequestHeader('Content-Type', 'application/json');
-                                        reXHR.send(JSON.stringify({ text }));
-                                        if (reXHR.status === 200) {
-                                            const res = JSON.parse(reXHR.responseText);
-                                            if (res.replaced > 0) {
-                                                console.log("[RyzenShield] 💎 Re-hydrated Shadow Tokens locally");
-                                                const blob = new Blob([res.text], { type: contentType || 'text/plain' });
-                                                return new Response(blob, { status: response.status, headers: response.headers });
+                                        const reRes = await originalFetch('http://127.0.0.1:9000/vault/rehydrate', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ text })
+                                        }).catch(e => null);
+                                        if (reRes && reRes.ok) {
+                                            const resData = await reRes.json();
+                                            if (resData.replaced > 0) {
+                                                return new Response(resData.text, { status: response.status, headers: response.headers });
                                             }
                                         }
                                     }

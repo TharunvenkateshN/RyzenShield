@@ -494,43 +494,44 @@ const SecureBrowser = () => {
             </div>
 
             {/* The Actual Browser View with NPU Active Badge */}
-            <div className="flex-1 relative bg-white">
-                <div ref={containerRef} className="w-full h-full" />
+            <div className="flex-1 relative bg-white flex flex-col">
+                {/* The WebView Container */}
+                <div ref={containerRef} className="flex-1 w-full" />
 
-                {/* Fixed NPU Active Floating Badge */}
-                <div className="absolute bottom-6 right-6 pointer-events-none group">
-                    <motion.div
-                        animate={{
-                            boxShadow: injected ? ["0 0 10px rgba(249,115,22,0.2)", "0 0 30px rgba(249,115,22,0.4)", "0 0 10px rgba(249,115,22,0.2)"] : "none"
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                        className={`px-4 py-2 rounded-2xl border flex items-center gap-3 backdrop-blur-xl ${injected ? 'bg-orange-500/10 border-orange-500/30' : 'bg-neutral-900/80 border-neutral-800'
-                            }`}
-                    >
-                        <Zap size={16} className={injected ? 'text-orange-500 animate-pulse' : 'text-neutral-500'} />
-                        <div className="text-left">
-                            <div className={`text-[10px] font-black uppercase tracking-widest leading-none ${injected ? 'text-white' : 'text-neutral-500'}`}>
-                                {injected ? 'XDNA Engine Active' : 'Sensing Flow...'}
-                            </div>
-                            <div className="text-[8px] font-bold text-neutral-600 uppercase mt-1">Local Intercept Mode</div>
-                        </div>
-                    </motion.div>
-                </div>
-                {/* Digital Hygiene Companion UI - Bottom Left */}
-                <div className="absolute bottom-6 left-6 z-40">
+                {/* Dedicated Status Bar (Prevents overlapping with Website UI like ChatGPT input) */}
+                <div className="shrink-0 h-14 bg-neutral-950 border-t border-neutral-900 flex items-center justify-between px-6 z-40">
+                    {/* Digital Hygiene Companion UI */}
                     <button
                         onClick={() => {
                             setShowHygieneModal(true);
                             if (!burnerData) generateBurner();
                         }}
-                        className="group flex items-center gap-3 px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded-2xl border border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all active:scale-95"
+                        className="group flex items-center gap-3 px-3 py-1.5 bg-orange-600/20 hover:bg-orange-500/30 rounded-xl border border-orange-500/30 transition-all active:scale-95"
                     >
-                        <UserPlus size={18} className="text-white" />
-                        <div className="text-left hidden sm:block">
-                            <div className="text-[10px] font-black uppercase tracking-widest leading-none text-white">Digital Hygiene Tool</div>
-                            <div className="text-[8px] font-bold text-orange-200 uppercase mt-1">Generate Safe Identity</div>
+                        <UserPlus size={16} className="text-orange-500" />
+                        <div className="text-left hidden sm:block mt-0.5">
+                            <div className="text-[10px] font-black uppercase tracking-widest leading-none text-orange-400">Digital Hygiene Tool</div>
+                            <div className="text-[7px] font-bold text-orange-500/70 uppercase mt-0.5">Generate Safe Identity</div>
                         </div>
                     </button>
+
+                    {/* NPU Active Badge */}
+                    <motion.div
+                        animate={{
+                            boxShadow: injected ? ["0 0 10px rgba(249,115,22,0.1)", "0 0 20px rgba(249,115,22,0.2)", "0 0 10px rgba(249,115,22,0.1)"] : "none"
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 ${injected ? 'bg-orange-500/10 border-orange-500/30' : 'bg-neutral-900 border-neutral-800'
+                            }`}
+                    >
+                        <Zap size={14} className={injected ? 'text-orange-500 animate-pulse' : 'text-neutral-500'} />
+                        <div className="text-left mt-0.5">
+                            <div className={`text-[9px] font-black uppercase tracking-widest leading-none ${injected ? 'text-white' : 'text-neutral-500'}`}>
+                                {injected ? 'XDNA Engine Active' : 'Sensing Flow...'}
+                            </div>
+                            <div className="text-[7px] font-bold text-neutral-600 uppercase mt-0.5">Local Intercept Mode</div>
+                        </div>
+                    </motion.div>
                 </div>
 
                 {/* Live Transcript Overlay (Active when in a meeting) */}

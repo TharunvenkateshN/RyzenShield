@@ -86,12 +86,32 @@ function createWindow() {
 app.whenReady().then(() => {
     createWindow();
 
-    // Python Backend Startup Logic (Placeholder)
-    // pythonProcess = spawn('python', ['../python-core/app.py']);
+    // Python Backend Startup Logic
+    let pythonProcess = null;
+
+    // Resolve location of python_core depending on if we are running from raw source or a packaged .exe
+    const basePath = app.isPackaged ? process.resourcesPath : path.join(__dirname, '../../');
+
+    console.log("[RyzenShield] Booting Local AI Backend from:", basePath);
+
+    pythonProcess = spawn('python', ['-m', 'python_core.api.server'], {
+        cwd: basePath,
+        detached: false
+    });
+
+    pythonProcess.stdout.on('data', (data) => console.log(`[Py-Core] ${data}`));
+    pythonProcess.stderr.on('data', (data) => console.error(`[Py-Core Error] ${data}`));
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
+        }
+    });
+
+    app.on('before-quit', () => {
+        if (pythonProcess) {
+            console.log("[RyzenShield] Tearing down AI Core Process...");
+            pythonProcess.kill();
         }
     });
 });

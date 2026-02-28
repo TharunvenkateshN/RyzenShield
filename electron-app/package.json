@@ -18,8 +18,27 @@
       "output": "dist-electron"
     },
     "win": {
-      "target": "nsis"
+      "target": [
+        "nsis",
+        "zip"
+      ]
     },
+    "extraResources": [
+      {
+        "from": "../python_core",
+        "to": "python_core",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../scripts",
+        "to": "scripts",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "files": [
       "dist/**/*",
       "main/**/*",

@@ -23,7 +23,7 @@ In the world of AI security, every millisecond counts. Conventional PII filterin
 
 ## ✨ Key Features (AMD Slingshot Hackathon Edition)
 
-- **🔍 Code-Aware Hybrid PII Engine**: Combines high-speed Regex patterns with deep SpaCy NLP and custom programming heuristics to accurately detect Entities, API Keys, and Passwords while ignoring false-positives in source code.
+- **🧠 Deep Context SLM Engine**: Supplements high-speed Regex and SpaCy NLP with a simulated ONNX Small Language Model. It detects conversational intent (e.g., "my passcode is X") to redact conversational secrets that standard scanners completely miss.
 - **🛡️ Secure Browser Integration**: Intercepts fetch/XHR inputs in real-time. If you paste a password into ChatGPT, the NPU blocks it locally before it hits the network.
 - **🎭 Digital Hygiene Companion**: An active defense module for students. Before signing up for untrusted college club services or sketchy websites, the NPU synthesizes a hyper-realistic, safe "Burner Persona" (fake dorm, alias email) to protect real university identities.
 - **🗄️ Zero-Trust Document Sanitizer**: Drop `.txt`, `.csv`, or `.md` files into the local vault. The NPU scans the entire document locally in milliseconds, physically redacts the sensitive text, and produces a clean, safe-to-share file with a side-by-side verification viewer.

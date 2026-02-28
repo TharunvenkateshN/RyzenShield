@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff, UserPlus, Info, Check, Copy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff, UserPlus, Info, Check, Copy, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SecureBrowser = () => {
@@ -19,8 +19,15 @@ const SecureBrowser = () => {
     const [isGeneratingBurner, setIsGeneratingBurner] = useState(false);
     const [copiedField, setCopiedField] = useState(null);
 
+    // Real-Time Audio Vault Simulation State
+    const [showAudioConsent, setShowAudioConsent] = useState(false);
+    const [liveAudioActive, setLiveAudioActive] = useState(false);
+    const [currentTranscript, setCurrentTranscript] = useState('');
+    const [audioBleep, setAudioBleep] = useState(false); // Used to trigger visual/audio muted effect
+
     const webviewRef = useRef(null);
     const containerRef = useRef(null);
+    const liveTranscriptTimer = useRef(null);
 
     const showToast = (message, type = 'info') => {
         setToast({ show: true, message, type });
@@ -236,6 +243,12 @@ const SecureBrowser = () => {
                 } else {
                     setSiteSafety('secure');
                 }
+
+                // 🎙️ Zoom/Meetings Detection for Live Audio Vault
+                if ((hostname.includes('zoom.us') || hostname.includes('meet.google.com') || hostname.includes('teams.microsoft.com') || hostname.includes('discord.com')) && !liveAudioActive) {
+                    setShowAudioConsent(true);
+                }
+
             } catch (e) {
                 setSiteSafety('unknown');
             }
@@ -254,8 +267,60 @@ const SecureBrowser = () => {
             webview.removeEventListener('did-start-loading', () => setIsLoading(true));
             webview.removeEventListener('did-stop-loading', handleLoad);
             if (container.firstChild) container.removeChild(container.firstChild);
+            if (liveTranscriptTimer.current) clearInterval(liveTranscriptTimer.current);
         };
     }, [url, protectionMode, rehydrateEnabled]);
+
+    const activateLiveAudioVault = () => {
+        setShowAudioConsent(false);
+        setLiveAudioActive(true);
+        showToast("🎙️ Local Audio Vault Active. Monitoring outgoing microphone feed.", "info");
+
+        // Simulate a student talking in a meeting and accidentally sharing PII
+        const fakeSubtitles = [
+            "Hey Professor, thanks for letting me join the office hours.",
+            "I was looking at the syllabus for next week...",
+            "By the way, my student ID number is ",
+            "SID-394857", // The PII
+            ", can you check if my grade updated?",
+            "Also, I'm having trouble logging into the bio server.",
+            "The password is still ",
+            "alpha-tango-7", // The PII
+            " right? Thanks!"
+        ];
+
+        let index = 0;
+        let cumulativeText = "";
+
+        const generateSubtitles = () => {
+            if (index >= fakeSubtitles.length) {
+                clearInterval(liveTranscriptTimer.current);
+                setTimeout(() => {
+                    setLiveAudioActive(false);
+                    setCurrentTranscript("");
+                }, 4000);
+                return;
+            }
+
+            const nextPhrase = fakeSubtitles[index];
+
+            // If the next phrase is PII, trigger the NPU block instantly
+            if (nextPhrase === "SID-394857" || nextPhrase === "alpha-tango-7") {
+                setAudioBleep(true); // Triggers visual red "BLEEP" status
+                setTimeout(() => setAudioBleep(false), 800);
+
+                const shadowToken = nextPhrase === "SID-394857" ? "[RS-USER-01]" : "[RS-CREDS-02]";
+                cumulativeText += `<span class='text-orange-500 font-bold bg-orange-500/20 px-1 rounded'>${shadowToken}</span>`;
+            } else {
+                cumulativeText += nextPhrase;
+            }
+
+            setCurrentTranscript(cumulativeText);
+            index++;
+        };
+
+        liveTranscriptTimer.current = setInterval(generateSubtitles, 2500);
+    };
 
     const handleNavigate = (e) => {
         if (e.key === 'Enter') {
@@ -467,7 +532,106 @@ const SecureBrowser = () => {
                         </div>
                     </button>
                 </div>
+
+                {/* Live Transcript Overlay (Active when in a meeting) */}
+                <AnimatePresence>
+                    {liveAudioActive && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 50 }}
+                            className="absolute bottom-24 left-1/2 -translate-x-1/2 w-4/5 max-w-2xl pointer-events-none z-40"
+                        >
+                            <div className={`p-4 rounded-2xl backdrop-blur-xl border flex flex-col items-center text-center transition-all duration-300 ${audioBleep ? 'bg-red-500/20 border-red-500/50 scale-[1.02]' : 'bg-black/60 border-neutral-700/50'
+                                }`}>
+                                <div className="flex items-center gap-2 mb-2">
+                                    {audioBleep ? (
+                                        <>
+                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-red-500">NPU Intercept: Outgoing Audio Muted</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex gap-1">
+                                                {[1, 2, 3].map(i => (
+                                                    <motion.div key={i} animate={{ height: [4, 12, 4] }} transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.2 }} className="w-1 bg-green-500 rounded-full" />
+                                                ))}
+                                            </div>
+                                            <span className="text-[10px] uppercase font-black tracking-widest text-green-500">Live NPU Transcript</span>
+                                        </>
+                                    )}
+                                </div>
+                                <div
+                                    className="text-white text-lg font-medium leading-relaxed drop-shadow-md min-h-[60px]"
+                                    dangerouslySetInnerHTML={{ __html: currentTranscript }}
+                                />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
             </div>
+
+            {/* Audio Vault Teach-Back / Consent Modal */}
+            <AnimatePresence>
+                {showAudioConsent && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            className="bg-neutral-900 border border-neutral-700 rounded-3xl p-6 w-full max-w-md shadow-2xl relative overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[60px] rounded-full pointer-events-none" />
+
+                            <div className="flex justify-between items-start mb-6 relative z-10">
+                                <div>
+                                    <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                        <Mic className="text-blue-500" /> Live Communications Detected
+                                    </h3>
+                                    <p className="text-xs text-neutral-400 mt-1 uppercase tracking-widest font-mono">Ryzen Local Audio Vault</p>
+                                </div>
+                                <button onClick={() => setShowAudioConsent(false)} className="text-neutral-500 hover:text-white p-1">
+                                    <svg width="14" height="14" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                                </button>
+                            </div>
+
+                            <div className="bg-blue-950/30 border border-blue-500/20 rounded-xl p-4 mb-6 relative z-10">
+                                <div className="flex gap-3">
+                                    <Info className="text-blue-500 shrink-0" size={18} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-blue-500 mb-1">Explainable Security Notice</h4>
+                                        <p className="text-xs text-blue-200/70 leading-relaxed">
+                                            You are entering a meeting platform (Zoom/Teams/Meet). Live transcripts and recordings are often stored on third-party cloud servers indefinitely.
+                                            <br /><br />
+                                            Do you want to enable the <strong>Ryzen AI Audio Vault</strong>? It will locally scan your microphone feed and instantly "bleep" or blur sensitive information before it leaves your device.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 relative z-10">
+                                <button
+                                    onClick={() => setShowAudioConsent(false)}
+                                    className="flex-1 py-3 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-sm font-bold rounded-xl transition-all border border-neutral-700"
+                                >
+                                    No Thanks
+                                </button>
+                                <button
+                                    onClick={activateLiveAudioVault}
+                                    className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)] flex justify-center items-center gap-2"
+                                >
+                                    <ShieldCheck size={16} /> Enable Live Vault
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Explanatory Security / Consent Modal */}
             <AnimatePresence>

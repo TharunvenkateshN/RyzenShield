@@ -7,11 +7,11 @@ import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
 import DocumentShield from './components/DocumentShield';
 import PhishingSandbox from './components/PhishingSandbox';
-import DeepfakeSentinel from './components/DeepfakeSentinel';
+import DataCamouflage from './components/DataCamouflage';
 import VisualShield from './components/VisualShield';
 import PerformanceLab from './components/PerformanceLab';
 import Settings from './components/Settings';
-import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Waves, Image as ImageIcon } from 'lucide-react';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Hexagon, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -93,7 +93,7 @@ function App() {
                     <NavItem id="sandbox" icon={AlertTriangle} label="Threat Sandbox" />
                     <NavItem id="visual" icon={ImageIcon} label="Visual Shield" />
                     <NavItem id="shield" icon={FileLock2} label="Document Shield" />
-                    <NavItem id="deepfake" icon={Waves} label="Deepfake Sentinel" />
+                    <NavItem id="camouflage" icon={Hexagon} label="PixelShield Vault" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
                     <NavItem id="performance" icon={Zap} label="Performance Lab" />
                     <NavItem id="settings" icon={SettingsIcon} label="Settings" />
@@ -207,9 +207,9 @@ function App() {
                         <VisualShield />
                     )}
 
-                    {/* Deepfake Sentinel Tab */}
-                    {activeTab === 'deepfake' && (
-                        <DeepfakeSentinel />
+                    {/* Data Camouflage Tab */}
+                    {activeTab === 'camouflage' && (
+                        <DataCamouflage />
                     )}
 
                     {/* Data Vault Tab */}

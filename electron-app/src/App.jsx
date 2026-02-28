@@ -7,9 +7,10 @@ import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
 import DocumentShield from './components/DocumentShield';
 import PhishingSandbox from './components/PhishingSandbox';
+import AudioVault from './components/AudioVault';
 import PerformanceLab from './components/PerformanceLab';
 import Settings from './components/Settings';
-import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Mic } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -90,6 +91,7 @@ function App() {
                     <NavItem id="browser" icon={Globe} label="Secure Browser" />
                     <NavItem id="sandbox" icon={AlertTriangle} label="Threat Sandbox" />
                     <NavItem id="shield" icon={FileLock2} label="Document Shield" />
+                    <NavItem id="audiovault" icon={Mic} label="Audio Vault" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
                     <NavItem id="performance" icon={Zap} label="Performance Lab" />
                     <NavItem id="settings" icon={SettingsIcon} label="Settings" />
@@ -196,6 +198,11 @@ function App() {
                     {/* Threat Sandbox Tab */}
                     {activeTab === 'sandbox' && (
                         <PhishingSandbox />
+                    )}
+
+                    {/* Audio Vault Tab */}
+                    {activeTab === 'audiovault' && (
+                        <AudioVault />
                     )}
 
                     {/* Data Vault Tab */}

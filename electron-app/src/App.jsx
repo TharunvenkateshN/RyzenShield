@@ -8,9 +8,10 @@ import DataVault from './components/DataVault';
 import DocumentShield from './components/DocumentShield';
 import PhishingSandbox from './components/PhishingSandbox';
 import AudioVault from './components/AudioVault';
+import VisualShield from './components/VisualShield';
 import PerformanceLab from './components/PerformanceLab';
 import Settings from './components/Settings';
-import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Mic } from 'lucide-react';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Mic, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -90,6 +91,7 @@ function App() {
                     <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                     <NavItem id="browser" icon={Globe} label="Secure Browser" />
                     <NavItem id="sandbox" icon={AlertTriangle} label="Threat Sandbox" />
+                    <NavItem id="visual" icon={ImageIcon} label="Visual Shield" />
                     <NavItem id="shield" icon={FileLock2} label="Document Shield" />
                     <NavItem id="audiovault" icon={Mic} label="Audio Vault" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
@@ -198,6 +200,11 @@ function App() {
                     {/* Threat Sandbox Tab */}
                     {activeTab === 'sandbox' && (
                         <PhishingSandbox />
+                    )}
+
+                    {/* Visual Shield Tab */}
+                    {activeTab === 'visual' && (
+                        <VisualShield />
                     )}
 
                     {/* Audio Vault Tab */}

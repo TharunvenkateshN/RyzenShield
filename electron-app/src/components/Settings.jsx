@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Shield, Globe, Bell, User, Cpu, Info, Check, Plus, Trash2, Zap, ArrowRight, HelpCircle, HardDrive, Network } from 'lucide-react';
+import { Settings as SettingsIcon, Shield, Globe, Bell, User, Cpu, Info, Check, Plus, Trash2, Zap, ArrowRight, HelpCircle, HardDrive, Network, ShieldCheck, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Settings = () => {
@@ -20,190 +20,218 @@ const Settings = () => {
     };
 
     return (
-        <div className="p-6 pb-12 space-y-8 max-w-5xl mx-auto h-full overflow-y-auto custom-scrollbar scroll-smooth">
+        <div className="h-full flex flex-col bg-[#050200] overflow-hidden selection:bg-orange-500/30 font-mono relative">
+            {/* Background Texture */}
+            <div className="absolute inset-0 z-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(249, 115, 22, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(249, 115, 22, 0.1) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
-            {/* 🎥 Scaled Header */}
-            <div className="relative isolate group">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10 border-b border-neutral-900 pb-6">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-gradient-to-br from-orange-500 to-orange-700 p-2 rounded-xl">
-                                <SettingsIcon className="w-5 h-5 text-white" />
-                            </div>
-                            <h1 className="text-2xl font-black text-white italic tracking-tighter uppercase leading-none">Control Center</h1>
-                        </div>
-                        <p className="text-neutral-500 text-[10px] font-medium tracking-tight uppercase">
-                            Configure your local <span className="text-white font-bold">AMD Ryzen™ AI</span> engine.
-                        </p>
+            {/* Standardized Header */}
+            <div className="flex items-center justify-between bg-[#110500]/90 backdrop-blur-md border-b border-orange-500/20 px-6 py-3 shrink-0 relative z-10 w-full">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20 shadow-inner">
+                        <SettingsIcon size={28} className="text-orange-500" />
                     </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight font-sans">Control Center</h1>
+                        <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mt-1 font-sans">Local NPU Configuration Matrix</p>
+                    </div>
+                </div>
 
-                    <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <div className="text-[9px] font-black text-neutral-600 uppercase tracking-widest">Engine Status</div>
-                            <div className="text-xs font-black text-green-500 flex items-center gap-1.5 justify-end">
-                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> OPTIMIZED
-                            </div>
+                <div className="flex items-center gap-3">
+                    <div className="text-right flex flex-col items-end">
+                        <div className="text-[9px] font-black text-orange-500/60 uppercase tracking-widest mb-1">Engine Status</div>
+                        <div className="text-[10px] bg-green-500/10 border border-green-500/30 px-3 py-1 rounded font-black text-green-500 flex items-center gap-2 justify-end uppercase tracking-widest shadow-inner">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]" /> OPTIMIZED
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            <div className="flex-1 overflow-y-auto p-6 relative z-10 w-full max-w-6xl mx-auto flex flex-col gap-8 custom-scrollbar scroll-smooth">
 
-                {/* 🛡️ Protection Profiles Section */}
-                <div className="xl:col-span-12">
-                    <div className="bg-[#0c0c0c] border border-neutral-800/60 p-8 rounded-[2.5rem] relative overflow-hidden group">
-                        <div className="flex flex-col xl:flex-row gap-8">
-                            {/* Security Level Selection */}
-                            <div className="flex-1 space-y-6">
-                                <div className="flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-orange-500" />
-                                    <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">Protection Profiles</h2>
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 h-full">
+
+                    {/* Left Column: Protection Profiles & Hardware */}
+                    <div className="xl:col-span-7 flex flex-col gap-8">
+
+                        {/* 🛡️ Protection Profiles */}
+                        <div className="bg-[#0c0400] border border-orange-500/20 p-8 relative shadow-xl overflow-hidden group">
+                            <div className="absolute -top-10 -right-10 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                                <Shield size={160} className="text-orange-500 rotate-12" />
+                            </div>
+
+                            <div className="flex items-center gap-3 mb-8 border-b border-orange-500/20 pb-4 relative z-10">
+                                <ShieldCheck size={18} className="text-orange-500" />
+                                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white font-sans">Threat Protection Profiles</h2>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 relative z-10">
+                                <SecurityTier
+                                    active={securityLevel === 'Standard'}
+                                    onClick={() => setSecurityLevel('Standard')}
+                                    title="Standard Overwatch"
+                                    lvl="v1.0"
+                                    desc="Optimized for general browsing. Basic PII masking and cloud diagnostics."
+                                    icon={Shield}
+                                />
+                                <SecurityTier
+                                    active={securityLevel === 'High'}
+                                    onClick={() => setSecurityLevel('High')}
+                                    title="Ryzen AI Pro"
+                                    lvl="v2.0"
+                                    desc="Deep XDNA utilization. Real-time intercept. Zero-trust heuristic threat analysis."
+                                    icon={Zap}
+                                    premium
+                                />
+                            </div>
+                        </div>
+
+                        {/* Hardware Control Panel */}
+                        <div className="bg-[#0c0400] border border-orange-500/20 flex flex-col relative overflow-hidden flex-1">
+                            <div className="bg-orange-500/10 border-b border-orange-500/20 p-2 flex items-center justify-between shrink-0">
+                                <div className="flex items-center gap-2 px-2 text-orange-500 font-black tracking-[0.2em] uppercase text-[10px]">
+                                    <Cpu size={12} /> Hardware Acceleration Link
                                 </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <SecurityTier
-                                        active={securityLevel === 'Standard'}
-                                        onClick={() => setSecurityLevel('Standard')}
-                                        title="Standard"
-                                        lvl="v1.0"
-                                        desc="Optimized for general browsing. Basic PII masking."
-                                        icon={Shield}
-                                    />
-                                    <SecurityTier
-                                        active={securityLevel === 'High'}
-                                        onClick={() => setSecurityLevel('High')}
-                                        title="Ryzen AI Pro"
-                                        lvl="v2.0"
-                                        desc="Deep XDNA utilization. Real-time threat interception."
-                                        icon={Zap}
-                                        premium
-                                    />
+                                <div className="flex gap-1 px-2 opacity-50">
+                                    <div className="w-1.5 h-1.5 rounded-sm bg-orange-500 animate-pulse"></div>
+                                    <div className="w-1.5 h-1.5 rounded-sm bg-orange-500 delay-75"></div>
                                 </div>
                             </div>
 
-                            {/* Hardware Mini-Panel */}
-                            <div className="w-full xl:w-72 bg-neutral-900/30 border border-neutral-800 rounded-[2rem] p-6 space-y-6">
-                                <div className="space-y-4">
-                                    <h3 className="text-[9px] font-black uppercase tracking-[.2em] text-neutral-600">Hardware</h3>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-neutral-400">NPU Offload</span>
-                                        <button
-                                            onClick={() => setHardwareOffload(!hardwareOffload)}
-                                            className={`w-10 h-5 rounded-full relative transition-all duration-500 ${hardwareOffload ? 'bg-orange-500' : 'bg-neutral-800'}`}
-                                        >
-                                            <motion.div animate={{ x: hardwareOffload ? 20 : 4 }} className="absolute top-1 w-3 h-3 bg-white rounded-full shadow-lg" />
-                                        </button>
+                            <div className="p-8 flex flex-col justify-center flex-1 z-10 space-y-8">
+                                <div className="flex items-center justify-between bg-black/40 border border-orange-500/10 p-5 rounded">
+                                    <div className="space-y-1">
+                                        <span className="text-sm font-black text-white tracking-widest uppercase font-sans">Local NPU Offload</span>
+                                        <div className="text-[10px] font-bold text-orange-500/60 uppercase tracking-widest">Route privacy scans through XDNA</div>
                                     </div>
-                                    <div className="pt-4 border-t border-neutral-800 flex justify-between text-[9px]">
-                                        <span className="text-neutral-600 font-bold uppercase tracking-widest">Latency</span>
-                                        <span className="text-orange-500 font-mono font-bold">2.1ms</span>
+                                    <button
+                                        onClick={() => setHardwareOffload(!hardwareOffload)}
+                                        className={`w-14 h-6 relative transition-all duration-300 border shadow-inner overflow-hidden ${hardwareOffload ? 'bg-orange-500/20 border-orange-500/50' : 'bg-neutral-900 border-neutral-800'}`}
+                                    >
+                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.1)_25%,rgba(255,255,255,0.1)_50%,transparent_50%,transparent_75%,rgba(255,255,255,0.1)_75%,rgba(255,255,255,0.1)_100%)] bg-[length:10px_10px]" />
+                                        <motion.div animate={{ x: hardwareOffload ? 32 : 4 }} className={`absolute top-1 bottom-1 w-4 bg-orange-500 shadow-[0_0_10px_#f97316]`} />
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="border border-orange-500/10 bg-[#050200] p-4 flex flex-col">
+                                        <span className="text-neutral-500 font-bold uppercase tracking-widest text-[9px] mb-2">Base Latency</span>
+                                        <span className="text-2xl font-black text-white font-sans">2.1<span className="text-sm text-neutral-500 ml-1">ms</span></span>
+                                    </div>
+                                    <div className="border border-green-500/20 bg-green-500/5 p-4 flex flex-col">
+                                        <span className="text-green-500/70 font-bold uppercase tracking-widest text-[9px] mb-2">Data Privacy</span>
+                                        <span className="text-xl font-black text-green-500 uppercase tracking-widest font-sans mt-1 flex items-center gap-2"><Lock size={16} /> Local</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* 🌐 Trusted Enclaves Section */}
-                <div className="xl:col-span-12">
-                    <div className="bg-[#0c0c0c] border border-neutral-800/60 rounded-[2.5rem] p-8 flex flex-col xl:flex-row gap-8 relative overflow-hidden">
-                        <div className="flex-1 space-y-6">
-                            <div className="flex items-center gap-2">
-                                <Globe className="w-4 h-4 text-neutral-500" />
-                                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-500">Trusted Safe List</h2>
+                    {/* Right Column: Trusted Enclaves */}
+                    <div className="xl:col-span-5 h-full">
+                        <div className="bg-[#0c0400] border border-orange-500/20 p-8 h-full flex flex-col relative overflow-hidden shadow-xl">
+                            <div className="absolute bottom-0 right-0 w-64 h-32 pointer-events-none opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(249, 115, 22, 0.5) 20px), repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(249, 115, 22, 0.5) 20px)' }} />
+
+                            <div className="flex items-center gap-3 mb-8 border-b border-orange-500/20 pb-4 relative z-10">
+                                <Globe size={18} className="text-orange-500" />
+                                <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white font-sans">Zero-Trust Exclusions</h2>
                             </div>
 
-                            <div className="bg-blue-500/5 border border-blue-500/10 p-5 rounded-2xl flex gap-3">
-                                <HelpCircle className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-                                <p className="text-[10px] text-neutral-500 leading-relaxed font-medium">
-                                    Trusted domains bypass the privacy proxy during exams while keeping hardware interception active.
+                            <div className="bg-orange-500/5 border-l-2 border-orange-500 p-4 mb-6 relative z-10">
+                                <p className="text-[10px] text-orange-200/80 uppercase tracking-wider leading-relaxed font-bold">
+                                    Trusted domains bypass the active privacy proxy during exams while keeping deterministic hardware interception active.
                                 </p>
                             </div>
 
-                            <div className="relative">
+                            <div className="relative mb-8 z-10">
                                 <input
                                     type="text"
-                                    placeholder="Add school domain..."
-                                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl py-3.5 px-5 text-xs focus:outline-none focus:border-orange-500 transition-all font-medium placeholder:text-neutral-700"
+                                    placeholder="ADD TRUSTED DOMAIN..."
+                                    className="w-full bg-[#050200] border border-orange-500/30 rounded p-4 pr-32 text-xs font-bold text-orange-400 placeholder-orange-500/30 focus:outline-none focus:border-orange-500 transition-all font-mono uppercase"
                                     value={newUrl}
                                     onChange={(e) => setNewUrl(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && addUrl()}
+                                    spellCheck="false"
                                 />
                                 <button
                                     onClick={addUrl}
-                                    className="absolute right-2 top-2 bottom-2 bg-neutral-800 hover:bg-orange-500 text-white px-5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+                                    className="absolute right-2 top-2 bottom-2 bg-neutral-900 border border-neutral-700 hover:bg-orange-500 hover:border-orange-400 text-neutral-400 hover:text-black px-6 text-[10px] font-black uppercase tracking-widest transition-all rounded shadow-inner"
                                 >
-                                    Add Enclave
+                                    Insert
                                 </button>
                             </div>
-                        </div>
 
-                        <div className="w-full xl:w-[350px] space-y-3">
-                            <div className="text-[9px] font-black text-neutral-700 uppercase tracking-widest mb-1 flex justify-between">
-                                <span>Active Platforms</span>
-                                <span>{trustedUrls.length} Count</span>
-                            </div>
-                            <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
-                                <AnimatePresence mode="popLayout">
-                                    {trustedUrls.map((url) => (
-                                        <motion.div
-                                            key={url}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            className="group bg-neutral-900/30 border border-neutral-800 p-3 rounded-xl flex items-center justify-between hover:border-neutral-700 transition-all shadow-xl"
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 bg-green-500 rounded-full shadow-[0_0_5px_green]" />
-                                                <span className="text-[11px] font-bold text-neutral-400 font-mono tracking-tight">{url}</span>
-                                            </div>
-                                            <button onClick={() => removeUrl(url)} className="opacity-0 group-hover:opacity-100 p-1 text-neutral-700 hover:text-red-500 transition-all">
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
+                            <div className="flex-1 flex flex-col overflow-hidden relative z-10">
+                                <div className="text-[9px] font-black text-orange-500/60 uppercase tracking-widest mb-3 flex justify-between border-b border-orange-500/10 pb-2">
+                                    <span>Active Platforms Matrix</span>
+                                    <span>[ {trustedUrls.length} ALLOWED ]</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                                    <AnimatePresence mode="popLayout">
+                                        {trustedUrls.map((url) => (
+                                            <motion.div
+                                                key={url}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                className="group bg-green-500/5 border border-green-500/20 p-4 flex items-center justify-between hover:bg-green-500/10 transition-colors backdrop-blur-sm relative overflow-hidden"
+                                            >
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500/50 group-hover:bg-green-500 transition-colors" />
+                                                <div className="flex items-center gap-3 pl-2">
+                                                    <div className="w-2 h-2 bg-green-500 rounded-sm shadow-[0_0_8px_#22c55e] animate-pulse" />
+                                                    <span className="text-[11px] font-bold text-green-400 font-mono tracking-widest uppercase">{url}</span>
+                                                </div>
+                                                <button onClick={() => removeUrl(url)} className="p-2 text-green-500/40 hover:text-red-500 hover:bg-red-500/10 transition-colors rounded">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* 🏁 Footer System Metrics */}
-            <footer className="pt-8 border-t border-neutral-900/50 flex flex-col md:flex-row justify-between items-baseline gap-4">
-                <div className="flex gap-6 text-[9px] font-black text-neutral-700 uppercase tracking-widest">
-                    <span>V1.0.4-Beta</span>
-                    <span>XDNA Core 2.1 Active</span>
-                </div>
-                <div className="text-[10px] font-black text-neutral-800 uppercase tracking-[.4em] italic">
-                    RyzenShield Verified
-                </div>
-            </footer>
+                {/* 🏁 Footer System Metrics */}
+                <footer className="pt-6 border-t border-orange-500/10 flex flex-col md:flex-row justify-between items-baseline gap-4 mt-2 mb-4 shrink-0 px-2 relative z-10">
+                    <div className="flex gap-8 text-[9px] font-black text-neutral-600 uppercase tracking-widest">
+                        <span>Build: VX-v1.0.4</span>
+                        <span className="text-orange-500/60">XDNA Core: SECURE INTERLOCK</span>
+                    </div>
+                    <div className="text-[10px] font-black text-neutral-700 uppercase tracking-[.4em] italic flex items-center gap-2">
+                        <Shield size={10} /> RyzenShield Verified Build
+                    </div>
+                </footer>
+            </div>
         </div>
     );
 };
 
-const SecurityTier = ({ active, onClick, title, desc, icon: Icon, lvl, premium = false }) => (
+const SecurityTier = ({ active, onClick, title, desc, icon: Icon, premium = false }) => (
     <button
         onClick={onClick}
         className={`
-            text-left p-5 rounded-[2rem] border transition-all duration-500 relative overflow-hidden group/tier
+            text-left p-6 border transition-all duration-500 relative overflow-hidden group/tier
             ${active
-                ? (premium ? 'bg-orange-500/5 border-orange-500/40 shadow-xl' : 'bg-white/5 border-white/20 shadow-md')
-                : 'bg-black/20 border-neutral-900 hover:border-neutral-800'}
+                ? (premium ? 'bg-orange-500/10 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'bg-neutral-800/50 border-neutral-600 shadow-md')
+                : 'bg-[#050200] border-orange-500/10 hover:border-orange-500/30'}
         `}
     >
-        <div className="relative z-10 flex gap-4">
-            <div className={`p-3 h-fit rounded-2xl transition-all duration-500 ${active ? (premium ? 'bg-orange-500 text-white' : 'bg-white text-black') : 'bg-neutral-900 text-neutral-700'}`}>
-                <Icon size={18} />
+        {active && (
+            <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl opacity-20 ${premium ? 'from-orange-500 to-transparent' : 'from-white to-transparent'}`} />
+        )}
+        <div className="relative z-10 flex items-start gap-5">
+            <div className={`p-4 h-fit border transition-all duration-500 ${active ? (premium ? 'bg-orange-500 border-orange-400 text-black shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'bg-neutral-700 border-neutral-500 text-white') : 'bg-black/50 border-orange-500/10 text-orange-500/40 group-hover/tier:text-orange-500/70 group-hover/tier:border-orange-500/30'}`}>
+                <Icon size={24} />
             </div>
-            <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                    <h3 className={`text-lg font-black italic tracking-tighter transition-colors ${active ? 'text-white' : 'text-neutral-500'}`}>{title}</h3>
-                    {active && <Check size={14} className={premium ? "text-orange-500" : "text-white"} strokeWidth={3} />}
+            <div className="space-y-2 flex-1 pt-1">
+                <div className="flex items-center justify-between">
+                    <h3 className={`text-base font-black tracking-widest uppercase font-sans transition-colors ${active ? (premium ? 'text-orange-400' : 'text-neutral-200') : 'text-neutral-500'}`}>
+                        {title}
+                    </h3>
+                    {active && <Check size={16} className={premium ? "text-orange-500" : "text-white"} strokeWidth={3} />}
                 </div>
-                <p className={`text-[10px] leading-relaxed transition-colors duration-500 ${active ? 'text-neutral-400 font-medium' : 'text-neutral-800'}`}>
+                <p className={`text-[11px] leading-relaxed uppercase tracking-wider font-bold transition-colors duration-500 ${active ? 'text-neutral-400' : 'text-neutral-700'}`}>
                     {desc}
                 </p>
             </div>

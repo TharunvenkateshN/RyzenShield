@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Hexagon, Lock, Unlock, Zap, Fingerprint, Activity, Code, Download, FileUp, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Hexagon, Lock, Unlock, Zap, Fingerprint, Activity, Code, Download, Cpu, KeyRound } from 'lucide-react';
 
 const DataCamouflage = () => {
     const [mode, setMode] = useState('encrypt'); // 'encrypt' or 'decrypt'
@@ -39,6 +39,44 @@ const DataCamouflage = () => {
         }
     };
 
+    const generateCarrier = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 800;
+        const ctx = canvas.getContext('2d');
+
+        // Draw an opaque background first so LSBs don't get destroyed by browser alpha-premultiplication saving
+        ctx.fillStyle = "#0c0400"; // Very dark orange-black
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw a complex noise pattern that looks like an abstract background
+        // Real steganography often works better on noisy images than flat colors
+        for (let x = 0; x < canvas.width; x += 10) {
+            for (let y = 0; y < canvas.height; y += 10) {
+                const r = Math.floor(Math.random() * 50) + 200; // Orange-ish
+                const g = Math.floor(Math.random() * 100) + 50;
+                const b = Math.floor(Math.random() * 20);
+
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                ctx.fillRect(x, Math.random() < 0.5 ? y : y + Math.random() * 20, 10, 10);
+            }
+        }
+
+        ctx.fillStyle = "rgba(0,0,0,0.6)"; // Darken the noisy pattern
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const dataUrl = canvas.toDataURL('image/png');
+        setMediaDataUrl(dataUrl);
+
+        // Mock a file object so the rest of the flow works
+        fetch(dataUrl).then(res => res.blob()).then(blob => {
+            const file = new File([blob], "generated_carrier.png", { type: "image/png" });
+            setMediaFile(file);
+            setEncryptedImage(null);
+            setDecryptedText(null);
+        });
+    };
+
     const runCamouflage = async () => {
         if (!mediaDataUrl) return;
         setIsProcessing(true);
@@ -68,78 +106,97 @@ const DataCamouflage = () => {
         if (!encryptedImage) return;
         const a = document.createElement("a");
         a.href = encryptedImage;
-        a.download = "RyzenShield_Camouflaged.png";
+        a.download = "RyzenShield_CryptoCarrier.png";
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
     };
 
     return (
-        <div className="h-full bg-[#050010] flex flex-col items-center justify-center p-8 relative overflow-hidden font-sans">
+        <div className="h-full bg-black flex flex-col items-center justify-center p-8 relative overflow-hidden font-mono text-sm">
 
             {/* Ambient Animated Background */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-fuchsia-600/20 blur-[120px] mix-blend-screen rounded-full animate-blob" />
-                <div className="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-indigo-600/30 blur-[130px] mix-blend-screen rounded-full animate-blob animation-delay-2000" />
-                <div className="absolute -bottom-32 left-1/3 w-80 h-80 bg-rose-600/20 blur-[100px] mix-blend-screen rounded-full animate-blob animation-delay-4000" />
-                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5 mix-blend-overlay" />
+                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-600/10 blur-[120px] mix-blend-screen rounded-full animate-blob" />
+                <div className="absolute top-1/3 right-1/4 w-[30rem] h-[30rem] bg-amber-600/10 blur-[130px] mix-blend-screen rounded-full animate-blob animation-delay-2000" />
+                <div className="absolute -bottom-32 left-1/3 w-80 h-80 bg-red-600/10 blur-[100px] mix-blend-screen rounded-full animate-blob animation-delay-4000" />
             </div>
 
             {/* Header Core */}
-            <div className="relative z-10 w-full max-w-5xl flex items-center justify-between mb-8">
+            <div className="relative z-10 w-full max-w-5xl flex items-center justify-between mb-8 border-b border-orange-500/20 pb-6">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 bg-fuchsia-500/10 rounded-2xl border border-fuchsia-500/20 backdrop-blur-md">
-                        <Hexagon size={28} className="text-fuchsia-500" />
+                    <div className="p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                        <Hexagon size={28} className="text-orange-500" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 to-indigo-400 tracking-tight">PixelShield Vault</h1>
-                        <p className="text-xs text-indigo-300 font-medium uppercase tracking-[0.2em] mt-1">Cryptography Engine • Local Memory</p>
+                        <h1 className="text-2xl font-black text-white tracking-tight font-sans">PixelShield Forge</h1>
+                        <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mt-1 font-sans">NPU LSB Cryptography Engine</p>
                     </div>
                 </div>
 
-                <div className="flex bg-[#0a0515]/80 backdrop-blur-xl border border-indigo-500/20 rounded-2xl p-1.5 shadow-2xl">
+                <div className="flex bg-[#111] border border-orange-500/20 rounded-xl p-1 shadow-2xl">
                     <button
                         onClick={() => { setMode('encrypt'); reset(); }}
-                        className={`px-6 py-2 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center gap-2 ${mode === 'encrypt' ? 'bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.4)]' : 'text-neutral-500 hover:text-white'}`}
+                        className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'encrypt' ? 'bg-orange-600 text-black shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'text-neutral-500 hover:text-white'}`}
                     >
-                        <Lock size={16} /> Synth-Lock
+                        <Lock size={14} /> Embed Data
                     </button>
                     <button
                         onClick={() => { setMode('decrypt'); reset(); }}
-                        className={`px-6 py-2 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center gap-2 ${mode === 'decrypt' ? 'bg-gradient-to-r from-fuchsia-600 to-indigo-600 text-white shadow-[0_0_20px_rgba(192,38,211,0.4)]' : 'text-neutral-500 hover:text-white'}`}
+                        className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'decrypt' ? 'bg-orange-600 text-black shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'text-neutral-500 hover:text-white'}`}
                     >
-                        <Unlock size={16} /> Extract Core
+                        <Unlock size={14} /> Extract Core
                     </button>
                 </div>
             </div>
 
             {/* Main Interface */}
-            <div className="relative z-10 w-full max-w-5xl flex-1 flex flex-col md:flex-row items-center gap-12 bg-[#0a051a]/60 backdrop-blur-3xl border border-indigo-500/20 rounded-[3rem] p-12 shadow-[0_0_50px_rgba(79,70,229,0.1)]">
+            <div className="relative z-10 w-full max-w-5xl flex-1 flex flex-col md:flex-row items-center gap-12 bg-[#0a0a0a] border border-orange-500/20 rounded-[2rem] p-12 shadow-2xl">
 
                 {/* Left: Interactive Node */}
-                <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative">
+                <div className="w-full md:w-1/2 flex flex-col items-center justify-center relative h-full min-h-[400px]">
                     {/* Glowing Circular Dropzone */}
                     <div
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleFileDrop}
-                        className={`relative w-[300px] h-[300px] rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer group
-                            ${mediaFile ? 'border-none' : 'border-2 border-dashed border-indigo-500/30 hover:border-fuchsia-400 hover:bg-fuchsia-500/5 hover:scale-105'}`}
-                        onClick={() => !mediaFile && fileInputRef.current?.click()}
+                        className={`relative w-[300px] h-[300px] rounded-full flex items-center justify-center transition-all duration-500 group
+                            ${mediaFile ? 'border-none' : 'border-2 border-dashed border-orange-500/30 hover:border-orange-400 hover:bg-orange-500/5'}`}
                     >
-                        <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" className="hidden" />
+                        <input type="file" id="pixel-upload" onChange={handleFileSelect} accept="image/*" className="hidden" />
 
                         {!mediaFile ? (
-                            <div className="flex flex-col items-center opacity-70 group-hover:opacity-100 transition-opacity">
-                                <div className="absolute inset-0 rounded-full border border-fuchsia-500/10 scale-110 animate-[spin_10s_linear_infinite]" />
-                                <div className="absolute inset-0 rounded-full border border-indigo-500/20 scale-125 animate-[spin_15s_linear_infinite_reverse]" />
-                                <Fingerprint size={64} className="text-fuchsia-400 mb-4" />
-                                <span className="text-xs font-bold uppercase tracking-widest text-indigo-300">Drop Carrier Image</span>
+                            <div className="flex flex-col items-center text-center">
+                                <div className="absolute inset-0 rounded-full border border-orange-500/10 scale-110 animate-[spin_10s_linear_infinite]" />
+                                <div className="absolute inset-0 rounded-full border border-amber-500/20 scale-125 animate-[spin_15s_linear_infinite_reverse]" />
+
+                                <Fingerprint size={48} className="text-orange-500/50 mb-4 group-hover:text-orange-400 transition-colors" />
+
+                                {mode === "encrypt" ? (
+                                    <>
+                                        <div className="flex flex-col gap-2 relative z-20">
+                                            <button onClick={() => { document.getElementById('pixel-upload').value = ''; document.getElementById('pixel-upload').click(); }} className="text-[10px] font-bold uppercase tracking-widest text-[#f97316] border border-[#f97316] hover:bg-[#f97316]/20 px-4 py-2 rounded-full mb-1 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(249,115,22,0.2)] transition-all">
+                                                Select User Image
+                                            </button>
+                                            <button onClick={() => generateCarrier()} className="text-[10px] font-bold uppercase tracking-widest text-black bg-orange-500 hover:bg-orange-400 px-4 py-2 rounded-full mb-3 flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all">
+                                                <KeyRound size={12} /> Generate Carrier
+                                            </button>
+                                        </div>
+                                        <span className="text-[10px] uppercase tracking-widest text-neutral-500">- OR DROP IMAGE -</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button onClick={() => { document.getElementById('pixel-upload').value = ''; document.getElementById('pixel-upload').click(); }} className="relative z-20 text-[10px] font-bold uppercase tracking-widest text-black bg-orange-500 hover:bg-orange-400 px-4 py-2 rounded-full mb-3 flex items-center gap-2 shadow-[0_0_15px_rgba(249,115,22,0.4)] transition-all">
+                                            Select Stego Image
+                                        </button>
+                                        <span className="text-[10px] uppercase tracking-widest text-neutral-500">To decipher payload</span>
+                                    </>
+                                )}
                             </div>
                         ) : (
-                            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full h-full rounded-full p-2 border border-fuchsia-500/30 shadow-[0_0_30px_rgba(192,38,211,0.2)] bg-[#050010]">
+                            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full h-full rounded-full p-2 border border-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.1)] bg-black">
                                 <img src={mediaDataUrl} alt="Payload" className="w-full h-full object-cover rounded-full mix-blend-luminosity hover:mix-blend-normal transition-all duration-500" />
-                                <button onClick={(e) => { e.stopPropagation(); reset(); }} className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-red-500 hover:bg-red-400 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-                                    Abort
+                                <button onClick={(e) => { e.stopPropagation(); reset(); }} className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-neutral-900 border border-neutral-700 hover:border-red-500 text-neutral-400 hover:text-red-500 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors shadow-xl">
+                                    Clear Buffer
                                 </button>
                             </motion.div>
                         )}
@@ -149,46 +206,51 @@ const DataCamouflage = () => {
                 {/* Right: Data Injector / Extractor Terminal */}
                 <div className="w-full md:w-1/2 flex flex-col gap-6">
                     {!mediaFile ? (
-                        <div className="h-[250px] flex flex-col items-center justify-center opacity-30">
-                            <Code size={48} className="text-indigo-500 mb-4" />
-                            <p className="text-xs uppercase tracking-widest text-center text-indigo-300 leading-loose">Awaiting Media Carrier<br />Local LSB Encoding Array Idle</p>
+                        <div className="h-[250px] flex flex-col items-center justify-center opacity-30 border-l border-neutral-900 pl-12">
+                            <Code size={48} className="text-orange-500 mb-4" />
+                            <p className="text-[10px] uppercase tracking-widest text-center text-orange-500/50 leading-loose font-bold">Awaiting Media Carrier<br />Local LSB Encoding Array Idle</p>
                         </div>
                     ) : (
                         <AnimatePresence mode="wait">
                             {!encryptedImage && !decryptedText ? (
                                 <motion.div key="input" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
                                     {mode === 'encrypt' ? (
-                                        <>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black text-fuchsia-400 uppercase tracking-[0.2em] flex items-center gap-2"><Lock size={12} /> Secret Data Payload</label>
+                                        <div className="bg-[#111] p-6 rounded-2xl border border-neutral-800 relative group overflow-hidden">
+                                            {/* Decorative circuit line */}
+                                            <div className="absolute top-0 left-0 w-1 h-full bg-orange-500 group-hover:shadow-[0_0_15px_rgba(249,115,22,0.8)] transition-all" />
+
+                                            <div className="space-y-4">
+                                                <label className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <Cpu size={14} /> Embed Data Payload
+                                                </label>
                                                 <textarea
                                                     value={secretText}
                                                     onChange={(e) => setSecretText(e.target.value)}
-                                                    placeholder="Input mnemonic, password, or sensitive text..."
-                                                    className="w-full bg-[#030008] border border-indigo-500/20 focus:border-fuchsia-500/50 rounded-2xl p-5 text-fuchsia-100 text-sm focus:outline-none transition-colors resize-none h-32 shadow-inner"
+                                                    placeholder="e.g. Master password...&#10;or secret seed phrase..."
+                                                    className="w-full bg-black border border-neutral-800 focus:border-orange-500/50 rounded-xl p-4 text-orange-100 text-xs focus:outline-none transition-colors resize-none h-28"
                                                 />
                                             </div>
                                             <button
                                                 onClick={runCamouflage}
                                                 disabled={!secretText || isProcessing}
-                                                className={`w-full py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-2 transition-all duration-300 relative overflow-hidden group
-                                                    ${!secretText || isProcessing ? 'bg-indigo-900/50 text-indigo-500 cursor-wait border border-indigo-800' : 'bg-gradient-to-r from-fuchsia-600 to-indigo-600 hover:from-fuchsia-500 hover:to-indigo-500 text-white shadow-[0_10px_40px_rgba(192,38,211,0.4)] border border-fuchsia-400/50'}`}
+                                                className={`mt-4 w-full py-3 rounded-xl font-bold uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 transition-all duration-300
+                                                    ${!secretText || isProcessing ? 'bg-neutral-900 text-neutral-600 cursor-not-allowed border border-neutral-800' : 'bg-orange-600 hover:bg-orange-500 text-black shadow-[0_0_20px_rgba(249,115,22,0.3)]'}`}
                                             >
-                                                {isProcessing ? <><Activity size={16} className="animate-spin" /> Binding Pixels...</> : <span className="flex items-center gap-3 relative z-10"><Zap size={16} /> Inject Payload to Media</span>}
+                                                {isProcessing ? <><Activity size={14} className="animate-spin" /> Modifying Bits...</> : <><Zap size={14} /> Inject Payload to Pixels</>}
                                             </button>
-                                        </>
+                                        </div>
                                     ) : (
-                                        <div className="flex flex-col justify-center h-[250px] space-y-8">
-                                            <div className="bg-indigo-900/20 border border-indigo-500/20 p-6 rounded-2xl">
-                                                <h4 className="text-xs font-bold text-indigo-300 uppercase tracking-widest mb-2 flex items-center gap-2"><Activity size={14} /> Image Loaded</h4>
-                                                <p className="text-[11px] text-indigo-200/60 leading-relaxed">The LSB decoding algorithm is ready to extract chemically bound data hidden within the pixel matrices of this file.</p>
+                                        <div className="flex flex-col justify-center h-[250px] space-y-6">
+                                            <div className="bg-[#111] border-l-4 border-orange-500 p-6 rounded-r-2xl border-t border-b border-r border-neutral-800">
+                                                <h4 className="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-2"><Activity size={14} /> Carrier Locked</h4>
+                                                <p className="text-[11px] text-neutral-400 leading-relaxed">Engine is prepared to perform deep LSB analysis to extract securely embedded data.</p>
                                             </div>
                                             <button
                                                 onClick={runCamouflage}
                                                 disabled={isProcessing}
-                                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_10px_40px_rgba(99,102,241,0.4)] rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-2 transition-all border border-indigo-400/50 hover:scale-105"
+                                                className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-black rounded-xl font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2 transition-all hover:scale-[1.02] shadow-[0_0_20px_rgba(249,115,22,0.3)]"
                                             >
-                                                {isProcessing ? <><Activity size={16} className="animate-spin" /> Unpacking Bits...</> : <><Unlock size={16} /> Execute Extraction</>}
+                                                {isProcessing ? <><Activity size={16} className="animate-spin" /> Unpacking Bits...</> : <><Unlock size={16} /> Execute Decryption</>}
                                             </button>
                                         </div>
                                     )}
@@ -196,29 +258,29 @@ const DataCamouflage = () => {
                             ) : (
                                 <motion.div key="result" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col h-[280px] justify-center space-y-6">
                                     {encryptedImage ? (
-                                        <div className="text-center space-y-6">
-                                            <div className="inline-flex p-4 bg-green-500/10 text-green-400 rounded-full border border-green-500/20">
-                                                <ShieldCheck size={32} />
+                                        <div className="text-center space-y-6 p-6 bg-[#111] border border-green-500/30 rounded-2xl">
+                                            <div className="inline-flex p-3 bg-green-500 text-black rounded-full shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                                                <Lock size={24} />
                                             </div>
                                             <div>
-                                                <h3 className="text-xl font-black text-white tracking-tight mb-2">Payload Embedded</h3>
-                                                <p className="text-xs text-indigo-300 font-medium">Image looks identical. LSB layer modified.</p>
+                                                <h3 className="text-lg font-black text-green-500 tracking-tight mb-1 uppercase">Payload Embedded</h3>
+                                                <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">Image is 100% functional.</p>
                                             </div>
-                                            <button onClick={downloadImage} className="w-full py-4 bg-white hover:bg-gray-100 text-black rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(255,255,255,0.2)] transition-colors">
-                                                <Download size={16} /> Download Stealth File
+                                            <button onClick={downloadImage} className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 border border-green-500/50 text-green-400 rounded-xl font-bold uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-colors">
+                                                <Download size={14} /> Download Stego-Carrier
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className={`text-center space-y-6 p-6 rounded-3xl border ${decryptedText.includes("NO SECRETS") ? 'bg-red-500/5 border-red-500/20' : 'bg-fuchsia-500/5 border-fuchsia-500/30 shadow-[0_0_40px_rgba(192,38,211,0.1)]'}`}>
-                                            <div className="flex justify-between items-center mb-2 px-2">
+                                        <div className={`text-center space-y-4 p-6 rounded-2xl border ${decryptedText.includes("NO SECRETS") ? 'bg-[#111] border-red-500/30' : 'bg-[#111] border-orange-500/30'}`}>
+                                            <div className="flex justify-between items-center mb-2 px-2 border-b border-neutral-800 pb-2">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">Decoded Buffer</span>
-                                                {decryptedText.includes("NO SECRETS") ? <AlertTriangle size={14} className="text-red-500" /> : <Unlock size={14} className="text-fuchsia-400" />}
+                                                {decryptedText.includes("NO SECRETS") ? <Hexagon size={14} className="text-red-500" /> : <Unlock size={14} className="text-orange-500" />}
                                             </div>
-                                            <div className={`p-6 bg-[#030008] border border-inherit rounded-2xl h-32 overflow-y-auto text-left font-mono text-sm leading-relaxed ${decryptedText.includes("NO SECRETS") ? 'text-red-400' : 'text-fuchsia-100 selection:bg-fuchsia-500/30'}`}>
+                                            <div className={`p-4 bg-black border border-neutral-800 rounded-xl max-h-32 overflow-y-auto custom-scrollbar text-left font-mono text-xs leading-relaxed ${decryptedText.includes("NO SECRETS") ? 'text-red-400' : 'text-orange-400 selection:bg-orange-500/30'}`}>
                                                 {decryptedText}
                                             </div>
                                             {!decryptedText.includes("NO SECRETS") && (
-                                                <p className="text-[10px] text-fuchsia-500/50 uppercase tracking-[0.3em] font-bold">100% Offline Extraction</p>
+                                                <p className="text-[10px] text-orange-500/50 uppercase tracking-[0.3em] font-bold">0 Latency • Offline Extracted</p>
                                             )}
                                         </div>
                                     )}
@@ -232,6 +294,7 @@ const DataCamouflage = () => {
     );
 };
 
+// ... existing encode/decode logic (kept exactly structural)
 function encodeTextIntoImage(dataUrl, text) {
     return new Promise((resolve, reject) => {
         const img = new Image();
@@ -251,19 +314,23 @@ function encodeTextIntoImage(dataUrl, text) {
 
             let fullBinaryStr = '';
             for (let i = 0; i < uint8array.length; i++) {
-                let bin = uint8array[i].toString(2);
-                fullBinaryStr += '00000000'.substring(bin.length) + bin;
+                fullBinaryStr += uint8array[i].toString(2).padStart(8, '0');
             }
 
             if (fullBinaryStr.length > data.length * 0.75) {
                 return reject("Image is too small or secret is too large.");
             }
 
+            // Force all alpha channels to 255 to prevent browser pre-multiplication 
+            // from destroying LSBs when saving/loading the canvas
+            for (let i = 3; i < data.length; i += 4) {
+                data[i] = 255;
+            }
+
             let binIndex = 0;
             for (let i = 0; i < data.length && binIndex < fullBinaryStr.length; i++) {
-                if ((i + 1) % 4 === 0) continue;
-                let bit = parseInt(fullBinaryStr[binIndex]);
-                data[i] = (data[i] & 254) | bit;
+                if ((i + 1) % 4 === 0) continue; // Skip alpha
+                data[i] = (data[i] & 254) | parseInt(fullBinaryStr[binIndex]);
                 binIndex++;
             }
 
@@ -288,29 +355,35 @@ function decodeTextFromImage(dataUrl) {
 
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imgData.data;
-            let binaryStr = '';
-            for (let i = 0; i < data.length; i++) {
-                if ((i + 1) % 4 === 0) continue;
-                binaryStr += (data[i] & 1).toString();
-            }
 
             const bytes = [];
-            for (let i = 0; i < binaryStr.length; i += 8) {
-                const byteStr = binaryStr.substring(i, i + 8);
-                if (byteStr.length === 8) {
-                    bytes.push(parseInt(byteStr, 2));
+            let currentByte = 0;
+            let bitCount = 0;
+
+            for (let i = 0; i < data.length; i++) {
+                if ((i + 1) % 4 === 0) continue;
+
+                currentByte = (currentByte << 1) | (data[i] & 1);
+                bitCount++;
+
+                if (bitCount === 8) {
+                    bytes.push(currentByte);
+                    currentByte = 0;
+                    bitCount = 0;
+
+                    // Check for the termination sequence '!!!RS_END!!!' (12 bytes)
+                    if (bytes.length >= 12) {
+                        const endStr = String.fromCharCode(...bytes.slice(-12));
+                        if (endStr === '!!!RS_END!!!') {
+                            const decoder = new TextDecoder('utf-8');
+                            const decodedText = decoder.decode(new Uint8Array(bytes.slice(0, -12)));
+                            return resolve(decodedText);
+                        }
+                    }
                 }
             }
 
-            try {
-                const decoder = new TextDecoder();
-                const decodedText = decoder.decode(new Uint8Array(bytes));
-                if (decodedText.includes('!!!RS_END!!!')) {
-                    return resolve(decodedText.split('!!!RS_END!!!')[0]);
-                }
-            } catch (e) {
-                return resolve(null);
-            }
+            // Reached the end without finding the marker
             resolve(null);
         };
         img.onerror = reject;

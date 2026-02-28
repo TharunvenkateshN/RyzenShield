@@ -12,7 +12,27 @@ body {
     .drag-region {
         -webkit-app-region: drag;
     }
+
     .no-drag {
         -webkit-app-region: no-drag;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(249, 115, 22, 0.05);
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(249, 115, 22, 0.3);
+        border-radius: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(249, 115, 22, 0.6);
     }
 }

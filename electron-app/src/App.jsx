@@ -11,7 +11,7 @@ import DataCamouflage from './components/DataCamouflage';
 import VisualShield from './components/VisualShield';
 import PerformanceLab from './components/PerformanceLab';
 import Settings from './components/Settings';
-import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Hexagon, Image as ImageIcon } from 'lucide-react';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle, Hexagon, Image as ImageIcon, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -151,12 +151,17 @@ function App() {
                     </div>
                 </div>
 
-                <div className={`flex-1 overflow-y-auto bg-[#0a0a0a] ${activeTab === 'browser' ? 'p-0' : 'p-4'}`}>
+                <div className={`flex-1 overflow-y-auto custom-scrollbar bg-[#0a0a0a] ${activeTab === 'browser' ? 'p-0' : 'p-4'}`}>
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6 max-w-5xl mx-auto">
-                            <div>
-                                <h1 className="text-2xl font-bold mb-1">Privacy Dashboard</h1>
-                                <p className="text-neutral-500 text-sm">Real-time protection status</p>
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                                    <Shield size={28} className="text-orange-500" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-black text-white tracking-tight font-sans">Privacy Dashboard</h1>
+                                    <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mt-1 font-sans">Real-Time Protection Status</p>
+                                </div>
                             </div>
 
                             <DashboardStats />

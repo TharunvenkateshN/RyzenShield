@@ -35,6 +35,20 @@ async def get_vault_mappings():
         print(f"[Vault] Error fetching mappings: {e}")
         return []
 
+@router.get("/vault/reveal/{id}")
+async def reveal_mapping(id: int):
+    """Retrieves the original value for a specific mapping."""
+    try:
+        real_val = vault.get_real_value(id)
+        if real_val:
+            vault.log_event("REVEAL", f"Manually unmasked data point {id} in Data Vault")
+            return {"id": id, "real_val": real_val}
+        return {"error": "Mapping not found"}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
+
 @router.post("/vault/rehydrate")
 async def rehydrate_text(payload: dict):
     """

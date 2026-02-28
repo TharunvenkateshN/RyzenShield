@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, ShieldAlert, ShieldCheck, Mail, Link as LinkIcon, Info, RefreshCw, ChevronRight, Zap, Shield } from 'lucide-react';
+import { AlertTriangle, ShieldAlert, ShieldCheck, Mail, Info, RefreshCw, Zap, Shield, Bug, ArrowRight, ServerCrash, Skull, CheckCircle } from 'lucide-react';
 
 const PhishingSandbox = () => {
     const [threatText, setThreatText] = useState('');
@@ -22,11 +22,10 @@ const PhishingSandbox = () => {
 
             if (res.ok) {
                 const data = await res.json();
-                // Artificial delay to simulate deep analysis for the demo
                 setTimeout(() => {
                     setAnalysis(data);
                     setIsAnalyzing(false);
-                }, 1200);
+                }, 1500);
             }
         } catch (err) {
             console.error(err);
@@ -40,151 +39,196 @@ const PhishingSandbox = () => {
     };
 
     return (
-        <div className="h-full flex flex-col p-8 overflow-y-auto">
-            <header className="mb-8 flex justify-between items-end">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="bg-red-500/10 p-2 rounded-xl border border-red-500/20">
-                            <AlertTriangle size={24} className="text-red-500" />
-                        </div>
-                        <h1 className="text-3xl font-black text-white tracking-tight">Threat Sandbox</h1>
-                    </div>
-                    <p className="text-neutral-400 font-medium">Early-warning and teach-back engine for phishing & social engineering.</p>
-                </div>
-            </header>
+        <div className="h-full flex flex-col bg-[#050200] overflow-y-auto custom-scrollbar selection:bg-orange-500/30 font-mono relative">
+            {/* Background Texture */}
+            <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(rgba(249, 115, 22, 0.15) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 relative z-10">
-                {/* Input Section */}
-                <div className="flex flex-col gap-4">
-                    <div className="bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-6 shadow-xl flex flex-col h-full">
+            {/* Standardized Header */}
+            <div className="flex items-center justify-between bg-[#110500]/90 backdrop-blur-md border-b border-orange-500/20 px-6 py-3 shrink-0 sticky top-0 z-50">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-orange-500/10 rounded-2xl border border-orange-500/20">
+                        <AlertTriangle size={28} className="text-orange-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight font-sans">Threat Sandbox</h1>
+                        <p className="text-[10px] text-orange-500/80 font-bold uppercase tracking-[0.2em] mt-1 font-sans">Social Engineering Forensic Engine</p>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex-1 p-6 relative z-10 max-w-6xl mx-auto w-full flex flex-col items-center">
+
+                {/* Top Input Module */}
+                <motion.div
+                    layout
+                    className="bg-[#0c0400] border border-orange-500/30 p-1 relative shadow-[0_0_30px_rgba(0,0,0,0.8)] overflow-hidden w-full max-w-4xl"
+                >
+                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(249,115,22,0.02)_1px,transparent_1px)] bg-[size:100%_4px] z-0" />
+
+                    <div className="bg-[#050200] p-6 relative z-10">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <Mail size={16} className="text-orange-500" />
-                                Suspicious Message Text
-                            </h3>
+                            <div className="flex items-center gap-2 text-orange-500">
+                                <Mail size={16} />
+                                <span className="text-xs font-black uppercase tracking-[0.2em]">Target Communication</span>
+                            </div>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={loadSample}
+                                    className="text-[10px] font-bold text-orange-400 hover:text-orange-300 uppercase tracking-widest transition-colors flex items-center gap-2 px-3 py-1 border border-orange-500/30 rounded bg-orange-500/5 hover:bg-orange-500/20"
+                                >
+                                    <Bug size={12} /> Inject Sample Spam
+                                </button>
+                                <button
+                                    onClick={() => { setThreatText(''); setAnalysis(null); }}
+                                    className="text-[10px] font-bold text-neutral-500 hover:text-red-400 uppercase tracking-widest transition-colors"
+                                >
+                                    Clear Buffer
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="relative group">
+                            <textarea
+                                value={threatText}
+                                onChange={(e) => setThreatText(e.target.value)}
+                                placeholder="PASTE SUSPICIOUS EMAIL, SMS, OR LINK HERE..."
+                                className={`w-full bg-[#0c0400] border p-6 text-neutral-300 font-mono text-sm resize-none focus:outline-none transition-all placeholder:text-orange-500/20 leading-relaxed shadow-inner
+                                    ${analysis ? 'h-32 border-orange-500/10 focus:border-orange-500/30' : 'h-64 border-orange-500/30 focus:border-orange-500'}`}
+                                spellCheck="false"
+                            />
+                        </div>
+
+                        <div className="mt-4 flex justify-end">
                             <button
-                                onClick={loadSample}
-                                className="text-xs font-bold text-orange-500 hover:text-orange-400 bg-orange-500/10 px-3 py-1.5 rounded-lg border border-orange-500/20 transition-all active:scale-95"
+                                onClick={handleAnalyze}
+                                disabled={!threatText.trim() || isAnalyzing}
+                                className={`px-8 py-3 text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all border
+                                    ${!threatText.trim() ? 'bg-[#110500] text-orange-900 border-orange-900/50 cursor-not-allowed' :
+                                        isAnalyzing ? 'bg-orange-600/20 text-orange-500 border-orange-500 cursor-wait shadow-[0_0_20px_rgba(249,115,22,0.3)]' :
+                                            'bg-orange-600 hover:bg-orange-500 text-black border-orange-400 shadow-[0_0_20px_rgba(249,115,22,0.5)] active:scale-95'}`}
                             >
-                                Load Sample Scam
+                                {isAnalyzing ? (
+                                    <><RefreshCw size={14} className="animate-spin" /> Analyzing...</>
+                                ) : (
+                                    <><Zap size={14} /> Trigger NPU Scan</>
+                                )}
                             </button>
                         </div>
-
-                        <textarea
-                            value={threatText}
-                            onChange={(e) => setThreatText(e.target.value)}
-                            placeholder="Paste a suspicious email, text message, or DM here..."
-                            className="w-full flex-1 bg-black/50 border border-neutral-800 rounded-xl p-4 text-neutral-300 font-mono text-sm resize-none focus:outline-none focus:border-orange-500/50 transition-colors min-h-[250px]"
-                        />
-
-                        <button
-                            onClick={handleAnalyze}
-                            disabled={!threatText.trim() || isAnalyzing}
-                            className={`mt-4 w-full py-4 rounded-xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all shadow-lg
-                                ${!threatText.trim() ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed' :
-                                    isAnalyzing ? 'bg-orange-600/50 text-white/50 cursor-wait' :
-                                        'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-500/20 active:scale-[0.98]'}`}
-                        >
-                            {isAnalyzing ? (
-                                <><RefreshCw size={18} className="animate-spin" /> Analyzing Intent...</>
-                            ) : (
-                                <><Zap size={18} /> Deep Scan Message</>
-                            )}
-                        </button>
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Teach-Back Analysis Section */}
-                <div className="flex flex-col relative">
-                    <AnimatePresence mode="wait">
-                        {!analysis && !isAnalyzing && (
-                            <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-neutral-800 rounded-[2rem] bg-neutral-900/20 text-center p-8"
-                            >
-                                <AlertTriangle size={48} className="text-neutral-700 mb-4" />
-                                <h3 className="text-lg font-bold text-neutral-500 mb-2">Awaiting Threat Payload</h3>
-                                <p className="text-sm text-neutral-600 max-w-sm">
-                                    Paste a message to generate a plain-language teach-back analysis powered by Ryzen AI.
-                                </p>
-                            </motion.div>
-                        )}
-
-                        {isAnalyzing && (
-                            <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="absolute inset-0 flex flex-col items-center justify-center border-2 border-dashed border-orange-500/30 rounded-[2rem] bg-orange-500/5 text-center p-8"
-                            >
-                                <Zap size={48} className="text-orange-500 animate-pulse mb-6" />
-                                <div className="space-y-3 w-64">
-                                    <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                                        <motion.div
-                                            initial={{ x: "-100%" }} animate={{ x: "100%" }}
-                                            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                            className="h-full bg-orange-500 w-1/2 rounded-full"
-                                        />
-                                    </div>
-                                    <p className="text-xs font-mono text-orange-500/80 uppercase tracking-widest">Running Contextual Analysis...</p>
+                {/* Analysis State Module */}
+                <AnimatePresence mode="wait">
+                    {isAnalyzing && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                            animate={{ opacity: 1, height: 'auto', marginTop: 32 }}
+                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                            className="bg-orange-500/5 border border-orange-500/20 p-8 flex flex-col items-center justify-center overflow-hidden w-full max-w-4xl"
+                        >
+                            <ServerCrash size={48} className="text-orange-500 animate-[bounce_2s_infinite] mb-6 drop-shadow-[0_0_15px_rgba(249,115,22,0.8)]" />
+                            <div className="w-96 space-y-4">
+                                <div className="h-1 w-full bg-black overflow-hidden relative border border-orange-500/30">
+                                    <motion.div
+                                        initial={{ x: "-100%" }} animate={{ x: "100%" }}
+                                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                                        className="absolute inset-y-0 w-1/2 bg-orange-500 shadow-[0_0_10px_#f97316]"
+                                    />
                                 </div>
-                            </motion.div>
-                        )}
-
-                        {analysis && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                                className="bg-neutral-900/50 border border-neutral-800 rounded-[2rem] p-6 shadow-xl flex-1"
-                            >
-                                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-neutral-800">
-                                    <div className={`p-2 rounded-xl ${analysis.risk_level === 'CRITICAL' || analysis.risk_level === 'HIGH' ? 'bg-red-500/10 text-red-500' : analysis.risk_level === 'MEDIUM' ? 'bg-orange-500/10 text-orange-500' : 'bg-green-500/10 text-green-500'}`}>
-                                        {analysis.risk_level === 'LOW' ? <ShieldCheck size={24} /> : <ShieldAlert size={24} />}
-                                    </div>
-                                    <div>
-                                        <h3 className="text-xl font-black text-white">Threat Analysis</h3>
-                                        <div className={`text-xs font-bold uppercase tracking-widest ${analysis.risk_level === 'CRITICAL' || analysis.risk_level === 'HIGH' ? 'text-red-500' : analysis.risk_level === 'MEDIUM' ? 'text-orange-500' : 'text-green-500'}`}>
-                                            Risk Level: {analysis.risk_level}
-                                        </div>
-                                    </div>
+                                <div className="text-center text-xs font-bold text-orange-500 uppercase tracking-[0.3em] animate-pulse">
+                                    Decompiling Psychological Vectors...
                                 </div>
+                            </div>
+                        </motion.div>
+                    )}
 
-                                <div className="space-y-4">
-                                    <h4 className="text-sm font-bold text-neutral-400 uppercase tracking-widest">Plain-Language Teach-Back</h4>
+                    {analysis && !isAnalyzing && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }}
+                            className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6 w-full max-w-6xl relative"
+                        >
+                            {/* Left Column: Risk & Recommendation */}
+                            <div className="lg:col-span-1 flex flex-col gap-6">
+                                <div className={`p-6 border relative overflow-hidden flex flex-col items-center justify-center text-center
+                                    ${analysis.risk_level === 'CRITICAL' || analysis.risk_level === 'HIGH' ? 'bg-red-500/10 border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.2)]' :
+                                        analysis.risk_level === 'MEDIUM' ? 'bg-orange-500/10 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.1)]' : 'bg-green-500/10 border-green-500/50 shadow-[0_0_30px_rgba(34,197,94,0.1)]'}
+                                `}>
+                                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-50" />
 
-                                    {analysis.flags.length > 0 ? (
-                                        analysis.flags.map((flag, idx) => (
-                                            <motion.div
-                                                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.1 }}
-                                                key={idx} className="bg-black/40 border border-neutral-800 rounded-xl p-4 flex gap-4 items-start"
-                                            >
-                                                <div className="mt-0.5 text-orange-500"><Info size={16} /></div>
-                                                <div>
-                                                    <h5 className="text-sm font-bold text-white mb-1">{flag.title}</h5>
-                                                    <p className="text-xs text-neutral-400 leading-relaxed">{flag.explanation}</p>
-                                                </div>
-                                            </motion.div>
-                                        ))
-                                    ) : (
-                                        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex gap-4 items-start">
-                                            <div className="mt-0.5 text-green-500"><ShieldCheck size={16} /></div>
-                                            <div>
-                                                <h5 className="text-sm font-bold text-green-400 mb-1">No Obvious Threats Detected</h5>
-                                                <p className="text-xs text-green-500/70 leading-relaxed">This message does not contain common phishing triggers. However, always verify the sender before clicking links.</p>
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className={`mb-4 p-4 rounded-full border border-current bg-black/50 ${analysis.risk_level === 'CRITICAL' || analysis.risk_level === 'HIGH' ? 'text-red-500' :
+                                        analysis.risk_level === 'MEDIUM' ? 'text-orange-500' : 'text-green-500'
+                                        }`}>
+                                        {analysis.risk_level === 'LOW' ? <CheckCircle size={48} /> : <Skull size={48} />}
+                                    </div>
+
+                                    <h3 className="text-[10px] text-neutral-400 uppercase tracking-[0.3em] font-bold mb-2">Calculated Threat Level</h3>
+                                    <div className={`text-5xl font-black uppercase tracking-tighter ${analysis.risk_level === 'CRITICAL' || analysis.risk_level === 'HIGH' ? 'text-red-500' :
+                                        analysis.risk_level === 'MEDIUM' ? 'text-orange-500' : 'text-green-500'
+                                        }`}>
+                                        {analysis.risk_level}
+                                    </div>
                                 </div>
 
                                 {analysis.risk_level !== 'LOW' && (
-                                    <div className="mt-6 p-4 bg-orange-950/30 border border-orange-500/20 rounded-xl">
-                                        <h4 className="text-xs font-black text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-2">
-                                            <Shield size={14} /> AI Recommendation
+                                    <div className="p-6 bg-[#0c0400] border-l-4 border-l-orange-500 border-t border-r border-b border-t-orange-500/20 border-r-orange-500/20 border-b-orange-500/20 relative overflow-hidden group">
+                                        <div className="absolute right-0 bottom-0 text-orange-500/5 pointer-events-none group-hover:text-orange-500/10 transition-colors">
+                                            <ShieldAlert size={80} className="-mr-4 -mb-4 transform rotate-12" />
+                                        </div>
+                                        <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2 relative z-10">
+                                            <Shield size={14} /> Tactical Directive
                                         </h4>
-                                        <p className="text-sm text-orange-200/80">Do not click any links or provide personal info. Delete this message. If it claims to be from a university or bank, log in to their official website directly instead of using the provided link.</p>
+                                        <p className="text-sm text-neutral-300 font-sans leading-relaxed relative z-10">
+                                            Sever interaction immediately. Do not click any embedded links or download attachments. Verify the sender's identity through out-of-band communication channels if necessary.
+                                        </p>
                                     </div>
                                 )}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                            </div>
+
+                            {/* Right Column: Identified Vectors */}
+                            <div className="lg:col-span-2 bg-[#0c0400] border border-orange-500/20 p-8 shadow-xl relative overflow-hidden">
+                                {/* Technical decorative graph in background */}
+                                <div className="absolute bottom-0 right-0 w-64 h-32 pointer-events-none opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(249, 115, 22, 0.5) 20px), repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(249, 115, 22, 0.5) 20px)' }} />
+
+                                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-orange-500/20 relative z-10">
+                                    <ArrowRight size={20} className="text-orange-500" />
+                                    <h4 className="text-sm font-black text-white uppercase tracking-widest font-sans">Behavioral Pattern Analysis</h4>
+                                </div>
+
+                                {analysis.flags.length > 0 ? (
+                                    <div className="space-y-4 relative z-10">
+                                        {analysis.flags.map((flag, idx) => (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.15 + 0.3 }}
+                                                key={idx} className="bg-black/80 border border-orange-500/10 p-5 relative group hover:border-orange-500/40 transition-colors backdrop-blur-sm"
+                                            >
+                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400 to-orange-600 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                                <div className="flex items-start gap-4 pl-3">
+                                                    <div className="mt-1 text-orange-500 bg-orange-500/10 p-1.5 rounded-lg border border-orange-500/20 shadow-inner">
+                                                        <Info size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <h5 className="text-sm font-black text-white uppercase tracking-wider mb-2 font-sans">{flag.title}</h5>
+                                                        <p className="text-xs text-neutral-400 leading-relaxed font-sans">{flag.explanation}</p>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="bg-green-500/5 border border-green-500/30 p-8 flex items-start gap-6 relative z-10">
+                                        <div className="p-4 bg-green-500/10 rounded-full border border-green-500/30 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                                            <ShieldCheck size={32} />
+                                        </div>
+                                        <div>
+                                            <h5 className="text-base font-black text-green-400 uppercase tracking-widest mb-2 font-sans">No Malicious Heuristics</h5>
+                                            <p className="text-sm text-green-500/80 leading-relaxed font-sans">The NPU text parser did not flag any obvious urgency, impersonation, or obfuscation vectors in this payload. Continue with standard operational procedures.</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
     );

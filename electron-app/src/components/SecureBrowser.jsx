@@ -797,7 +797,7 @@ const SecureBrowser = () => {
     return (
         <div className="flex flex-col h-full bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-neutral-800/60 shadow-2xl relative">
             {/* Tabs Bar */}
-            <div className="flex items-center bg-[#050505] pt-3 px-4 gap-2 overflow-x-auto border-b border-neutral-800/80 shrink-0">
+            <div className="flex items-center bg-[#050505] pt-3 px-4 gap-2 overflow-x-auto custom-scrollbar border-b border-neutral-800/80 shrink-0">
                 {tabs.map(tab => (
                     <div
                         key={tab.id}

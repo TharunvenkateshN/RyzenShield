@@ -215,3 +215,32 @@ async def sanitize_document(file: UploadFile = File(...)):
         traceback.print_exc()
         return {"error": str(e), "status": "error"}
 
+import random
+
+@router.get("/vault/generate-burner")
+async def generate_burner_persona():
+    """
+    Generates a secure, trackable Burner Student Persona.
+    Used for the Digital Hygiene Companion to protect student PII on untrusted forms.
+    """
+    first_names = ["Alex", "Jordan", "Taylor", "Morgan", "Casey", "Riley", "Jamie", "Skyler"]
+    last_names = ["Chen", "Patel", "Smith", "Rodriguez", "Kim", "Nguyen", "Garcia", "Johnson"]
+    dorms = ["University Hall, Room", "North Campus Dorms, Room", "West Village Suite", "Founders Hall, Room"]
+    
+    fname = random.choice(first_names)
+    lname = random.choice(last_names)
+    alias_id = random.randint(100, 999)
+    
+    burner = {
+        "name": f"{fname} {lname}",
+        "email": f"student_alias_{alias_id}_{fname.lower()}@ryzenshield.edu",
+        "phone": f"(555) 019-{random.randint(1000, 9999)}",
+        "address": f"{random.choice(dorms)} {random.randint(100, 800)}",
+        "student_id": f"SID-{random.randint(10000000, 99999999)}"
+    }
+    
+    # Log this active defense event
+    vault.log_event("BURNER_CREATED", f"Generated trackable hygiene persona: {burner['email']}")
+    
+    return burner
+

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, ArrowRight, RefreshCw, Lock, ShieldCheck, Globe, Zap, Search, Shield, ChevronLeft, ChevronRight, RotateCcw, UserCheck, Cpu, Eye, EyeOff, UserPlus, Info, Check, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const SecureBrowser = () => {
@@ -12,6 +12,13 @@ const SecureBrowser = () => {
     const [protectionMode, setProtectionMode] = useState('consent'); // 'consent' or 'auto'
     const [rehydrateEnabled, setRehydrateEnabled] = useState(true);
     const [isFocused, setIsFocused] = useState(false);
+
+    // Digital Hygiene Companion State
+    const [showHygieneModal, setShowHygieneModal] = useState(false);
+    const [burnerData, setBurnerData] = useState(null);
+    const [isGeneratingBurner, setIsGeneratingBurner] = useState(false);
+    const [copiedField, setCopiedField] = useState(null);
+
     const webviewRef = useRef(null);
     const containerRef = useRef(null);
 
@@ -265,6 +272,27 @@ const SecureBrowser = () => {
         setInjected(false);
     };
 
+    const generateBurner = async () => {
+        setIsGeneratingBurner(true);
+        try {
+            const res = await fetch('http://127.0.0.1:9000/vault/generate-burner');
+            if (res.ok) {
+                const data = await res.json();
+                setBurnerData(data);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsGeneratingBurner(false);
+        }
+    };
+
+    const copyToClipboard = (text, field) => {
+        navigator.clipboard.writeText(text);
+        setCopiedField(field);
+        setTimeout(() => setCopiedField(null), 2000);
+    };
+
     return (
         <div className="flex flex-col h-full bg-[#0a0a0a] rounded-[2.5rem] overflow-hidden border border-neutral-800/60 shadow-2xl relative">
 
@@ -423,7 +451,119 @@ const SecureBrowser = () => {
                         </div>
                     </motion.div>
                 </div>
+                {/* Digital Hygiene Companion UI - Bottom Left */}
+                <div className="absolute bottom-6 left-6 z-40">
+                    <button
+                        onClick={() => {
+                            setShowHygieneModal(true);
+                            if (!burnerData) generateBurner();
+                        }}
+                        className="group flex items-center gap-3 px-4 py-2 bg-orange-600 hover:bg-orange-500 rounded-2xl border border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all active:scale-95"
+                    >
+                        <UserPlus size={18} className="text-white" />
+                        <div className="text-left hidden sm:block">
+                            <div className="text-[10px] font-black uppercase tracking-widest leading-none text-white">Digital Hygiene Tool</div>
+                            <div className="text-[8px] font-bold text-orange-200 uppercase mt-1">Generate Safe Identity</div>
+                        </div>
+                    </button>
+                </div>
             </div>
+
+            {/* Explanatory Security / Consent Modal */}
+            <AnimatePresence>
+                {showHygieneModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            className="bg-neutral-900 border border-neutral-700 rounded-3xl p-6 w-full max-w-md shadow-2xl relative overflow-hidden"
+                        >
+                            {/* Decorative background glow */}
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 blur-[60px] rounded-full pointer-events-none" />
+
+                            <div className="flex justify-between items-start mb-6 relative z-10">
+                                <div>
+                                    <h3 className="text-xl font-black text-white flex items-center gap-2">
+                                        <ShieldCheck className="text-orange-500" /> Digital Hygiene Shield
+                                    </h3>
+                                    <p className="text-xs text-neutral-400 mt-1 uppercase tracking-widest font-mono">Consent-First Burner Identity</p>
+                                </div>
+                                <button onClick={() => setShowHygieneModal(false)} className="text-neutral-500 hover:text-white p-1">
+                                    <svg width="14" height="14" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                                </button>
+                            </div>
+
+                            {/* Explainable Security Panel */}
+                            <div className="bg-orange-950/30 border border-orange-500/20 rounded-xl p-4 mb-6 relative z-10">
+                                <div className="flex gap-3">
+                                    <Info className="text-orange-500 shrink-0" size={18} />
+                                    <div>
+                                        <h4 className="text-sm font-bold text-orange-500 mb-1">Why use a Burner Profile?</h4>
+                                        <p className="text-xs text-orange-200/70 leading-relaxed">
+                                            Untrusted sites (like student clubs or random pdf tools) often suffer data breaches.
+                                            Ryzen AI generated this synthetic persona locally. Use it for sign-ups so your real university email and phone number remain totally isolated from hackers.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* The Generated Data */}
+                            <div className="space-y-3 relative z-10">
+                                {isGeneratingBurner || !burnerData ? (
+                                    <div className="py-8 text-center flex flex-col items-center">
+                                        <RefreshCw className="text-orange-500 animate-spin mb-3" size={24} />
+                                        <div className="text-xs text-neutral-400 font-mono">XDNA Engine synthesizing persona...</div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {Object.entries({
+                                            'Full Name': burnerData.name,
+                                            'Alias Email': burnerData.email,
+                                            'Phone Number': burnerData.phone,
+                                            'Dorm Address': burnerData.address,
+                                            'Student ID': burnerData.student_id
+                                        }).map(([label, value]) => (
+                                            <div key={label} className="bg-black/50 border border-neutral-800 rounded-xl p-3 flex justify-between items-center group">
+                                                <div className="min-w-0 pr-4">
+                                                    <div className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-0.5">{label}</div>
+                                                    <div className="text-sm font-mono text-white truncate">{value}</div>
+                                                </div>
+                                                <button
+                                                    onClick={() => copyToClipboard(value, label)}
+                                                    className={`p-2 rounded-lg transition-all shrink-0 ${copiedField === label ? 'bg-green-500/20 text-green-500' : 'bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700'}`}
+                                                >
+                                                    {copiedField === label ? <Check size={14} /> : <Copy size={14} />}
+                                                </button>
+                                            </div>
+                                        ))}
+
+                                        <div className="pt-4 flex gap-3">
+                                            <button
+                                                onClick={generateBurner}
+                                                className="flex-1 py-3 px-4 bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-bold rounded-xl transition-all border border-neutral-700 flex justify-center items-center gap-2"
+                                            >
+                                                <RefreshCw size={14} /> New Persona
+                                            </button>
+                                            <button
+                                                onClick={() => setShowHygieneModal(false)}
+                                                className="flex-1 py-3 px-4 bg-orange-600 hover:bg-orange-500 text-white text-sm font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                                            >
+                                                Done
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

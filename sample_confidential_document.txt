@@ -1,0 +1,30 @@
+CONFIDENTIAL INTERNAL DOCUMENT
+PROJECT: Project Avalon
+DATE: February 28, 2026
+AUTHOR: Sarah Jenkins
+
+To all relevant team members,
+
+Below is the initial credential breakdown for the new Ryzen Shield architecture testing environments. Do NOT share this file outside of the immediate engineering team.
+
+Employee Contacts:
+- Sarah Jenkins, Lead AI Engineer: sarah.j@ryzenshield.internal.com
+- Michael Chang, Security Ops: m.chang+ops@ryzenshield.internal.com
+- Dr. Emily Rostova, Hardware Liaison: emily.rostova@amd.com
+- Support Hotline: 1-800-555-0199
+
+Development Server Access:
+- DB Admin Password: password123!Secure
+- Redis Fallback Key: secret-red-99
+- AWS Development Key: AKIAIOSFODNN7EXAMPLE
+- Test GitHub Token: ghp_1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r
+
+Budget Allocation:
+We have secured $500k for the initial hardware procurement consisting of new Ryzen AI 9000 series chips. 
+
+Action Items:
+Michael - please ensure the firewall rules for IP 192.168.1.150 are updated to allow incoming from the Edge nodes.
+
+Regards,
+Sarah Jenkins
+Lead Engineer, AMD Slingshot Team

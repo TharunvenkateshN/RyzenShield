@@ -5,9 +5,10 @@ import RealTimeLog from './components/RealTimeLog';
 import DashboardStats from './components/DashboardStats';
 import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
+import DocumentShield from './components/DocumentShield';
 import PerformanceLab from './components/PerformanceLab';
 import Settings from './components/Settings';
-import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap } from 'lucide-react';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -86,6 +87,7 @@ function App() {
                 <nav className="flex-1 space-y-1">
                     <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                     <NavItem id="browser" icon={Globe} label="Secure Browser" />
+                    <NavItem id="shield" icon={FileLock2} label="Document Shield" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
                     <NavItem id="performance" icon={Zap} label="Performance Lab" />
                     <NavItem id="settings" icon={SettingsIcon} label="Settings" />
@@ -182,6 +184,11 @@ function App() {
                     {/* ALWAYS mount SecureBrowser to keep session alive, use tailwind to hide when not active */}
                     <div className={`h-full ${activeTab === 'browser' ? 'block' : 'hidden'}`}>
                         <SecureBrowser />
+                    </div>
+
+                    {/* Document Shield Tab */}
+                    <div className={activeTab === 'shield' ? 'h-full' : 'hidden'}>
+                        <DocumentShield />
                     </div>
 
                     {/* Data Vault Tab */}

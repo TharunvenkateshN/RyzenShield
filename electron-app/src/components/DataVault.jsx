@@ -94,6 +94,8 @@ const DataVault = () => {
                 <StatusToggle icon={Shield} label="Access" value="Local Only" />
             </div>
 
+
+
             {/* Ledger Table */}
             <div className="bg-neutral-900/30 border border-neutral-800 rounded-[2rem] overflow-hidden shadow-2xl">
                 <table className="w-full text-left">

@@ -44,6 +44,21 @@ class PIIScanner:
         findings = []
         seen_values = set()
 
+    def _is_likely_code(self, text: str) -> bool:
+        """Heuristic to prevent SpaCy from falsely flagging code syntax as entities."""
+        if len(text.strip()) <= 2: 
+            return True
+        # Contains dots, underscores, parenthesis, brackets, or math symbols
+        if re.search(r"[\._\(\)\[\]=+*\-]", text):
+            return True
+        # Pure lowercase word (likely variables/functions)
+        if re.match(r"^[a-z]+$", text):
+            return True
+        # camelCase or PascalCase without spaces (classes/functions like DataFrame)
+        if re.match(r"^[a-z]+[A-Z][a-zA-Z]*$", text) or re.match(r"^[A-Z][a-z]+[A-Z][a-zA-Z]*$", text):
+            return True
+        return False
+
         # Phase 1: Regex Scan
         for label, pattern in self.regex_patterns.items():
             matches = re.finditer(pattern, text)
@@ -64,33 +79,34 @@ class PIIScanner:
             doc = nlp(text)
             for ent in doc.ents:
                 if ent.label_ in self.ner_labels:
-                    # Avoid duplicates found by Regex (e.g. Org names that look like emails?)
-                    if ent.text not in seen_values:
+                    val = ent.text
+                    # Avoid duplicates found by Regex and ignore obvious programming code constructs
+                    if val not in seen_values and not self._is_likely_code(val):
                         findings.append({
                             "type": ent.label_, # PERSON, ORG, etc.
-                            "value": ent.text,
+                            "value": val,
                             "start": ent.start_char,
                             "end": ent.end_char,
                             "method": "ner"
                         })
-                        seen_values.add(ent.text)
+                        seen_values.add(val)
 
         # Phase 3: Confidential Keyword Scan
         for kw in self.confidential_keywords:
-            if kw.upper() in text.upper():
-                # Find all occurrences
-                matches = re.finditer(re.escape(kw), text, re.IGNORECASE)
-                for m in matches:
-                    val = m.group()
-                    if val not in seen_values:
-                        findings.append({
-                            "type": "CONFIDENTIAL",
-                            "value": val,
-                            "start": m.start(),
-                            "end": m.end(),
-                            "method": "keyword"
-                        })
-                        seen_values.add(val)
+            # Use word boundaries so "NDA" doesn't catch the "nda" in "pandas"
+            pattern = r"\b" + re.escape(kw) + r"\b"
+            matches = re.finditer(pattern, text, re.IGNORECASE)
+            for m in matches:
+                val = m.group()
+                if val not in seen_values:
+                    findings.append({
+                        "type": "CONFIDENTIAL",
+                        "value": val,
+                        "start": m.start(),
+                        "end": m.end(),
+                        "method": "keyword"
+                    })
+                    seen_values.add(val)
         
         return findings
 

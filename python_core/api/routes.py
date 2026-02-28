@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 from python_core.vault.db_manager import VaultManager
 
 router = APIRouter()
@@ -174,3 +174,44 @@ async def process_text_api(payload: dict):
         import traceback
         traceback.print_exc()
         return {"text": payload.get("text", ""), "sanitized": False, "error": str(e)}
+
+@router.post("/vault/sanitize-document")
+async def sanitize_document(file: UploadFile = File(...)):
+    """
+    Drag-and-Drop Document Sanitizer. Scans entire document, redacts text locally, logs to vault.
+    """
+    try:
+        content = await file.read()
+        text = content.decode("utf-8")
+        
+        # Scan and sanitize the document text
+        findings = scanner.scan(text)
+        if findings:
+            sanitized_text, mapping = inference.sanitize(text, findings, scanner)
+            session_id = str(uuid.uuid4())
+            
+            vault.log_event("DOCUMENT_SCAN", f"Sanitized document, shielded {len(mapping)} items")
+            vault.store_mapping(session_id, mapping)
+            
+            return {
+                "filename": file.filename,
+                "original_content": text,
+                "sanitized_content": sanitized_text,
+                "status": "success",
+                "shielded_count": len(mapping)
+            }
+        
+        return {
+            "filename": file.filename,
+            "original_content": text,
+            "sanitized_content": text,
+            "status": "clean",
+            "shielded_count": 0
+        }
+    except UnicodeDecodeError:
+        return {"error": "Only text-based files (TXT, CSV, MD) are supported in this demo.", "status": "error"}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e), "status": "error"}
+

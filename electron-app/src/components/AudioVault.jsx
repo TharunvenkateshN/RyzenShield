@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, UploadCloud, FileAudio, Play, Pause, ShieldCheck, Zap, Activity, FileText, Lock } from 'lucide-react';
+import { Mic, UploadCloud, FileAudio, Play, Pause, ShieldCheck, Zap, Activity, FileText, Lock, RefreshCw } from 'lucide-react';
 
 const AudioVault = () => {
     const [audioFile, setAudioFile] = useState(null);

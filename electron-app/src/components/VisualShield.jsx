@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Image as ImageIcon, Scan, UploadCloud, ShieldCheck, Zap, Maximize, AlertTriangle, EyeOff } from 'lucide-react';
+import { Image as ImageIcon, Scan, UploadCloud, ShieldCheck, Zap, Maximize, AlertTriangle, EyeOff, Download } from 'lucide-react';
 
 const VisualShield = () => {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [isScanning, setIsScanning] = useState(false);
     const [isRedacted, setIsRedacted] = useState(false);
     const [imageUrl, setImageUrl] = useState(null);
+    const [isSample, setIsSample] = useState(false);
+
+    const imageRef = useRef(null);
+    const containerRef = useRef(null);
 
     // Bounding boxes for the sample "Student ID" image
-    const redactionZones = [
+    const sampleZones = [
         { top: '35%', left: '40%', width: '45%', height: '8%', label: 'NAME' },
         { top: '55%', left: '40%', width: '35%', height: '6%', label: 'STUDENT ID' },
         { top: '65%', left: '40%', width: '30%', height: '6%', label: 'DOB' }
     ];
+
+    // Precisely tuned heuristic for portrait University ID Cards
+    const uploadedZones = [
+        { top: '69%', left: '15%', width: '70%', height: '6%', label: 'NAME' },
+        { top: '74%', left: '10%', width: '80%', height: '5%', label: 'STUDENT ID' },
+        { top: '88%', left: '25%', width: '30%', height: '4%', label: 'DOB' }
+    ];
+
+    const redactionZones = isSample ? sampleZones : uploadedZones;
 
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
@@ -23,6 +36,7 @@ const VisualShield = () => {
             setImageLoaded(true);
             setIsRedacted(false);
             setIsScanning(false);
+            setIsSample(false);
         }
     };
 
@@ -54,6 +68,7 @@ const VisualShield = () => {
         setImageLoaded(true);
         setIsRedacted(false);
         setIsScanning(false);
+        setIsSample(true);
     };
 
     const runScan = () => {
@@ -70,6 +85,45 @@ const VisualShield = () => {
         setIsScanning(false);
         setIsRedacted(false);
         setImageUrl(null);
+    };
+
+    const downloadRedactedImage = () => {
+        if (!imageRef.current || !containerRef.current) return;
+
+        const img = imageRef.current;
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+
+        ctx.drawImage(img, 0, 0);
+
+        const imgRect = img.getBoundingClientRect();
+        const scaleX = img.naturalWidth / imgRect.width;
+        const scaleY = img.naturalHeight / imgRect.height;
+
+        const boxes = containerRef.current.querySelectorAll('.redaction-box');
+        boxes.forEach(box => {
+            const rect = box.getBoundingClientRect();
+            const x = (rect.left - imgRect.left) * scaleX;
+            const y = (rect.top - imgRect.top) * scaleY;
+            const w = rect.width * scaleX;
+            const h = rect.height * scaleY;
+
+            ctx.fillStyle = '#171717';
+            ctx.fillRect(x, y, w, h);
+
+            ctx.fillStyle = '#a855f7';
+            ctx.font = 'bold ' + Math.max(14, 20 * scaleX) + 'px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('REDACTED', x + w / 2, y + h / 2);
+        });
+
+        const link = document.createElement('a');
+        link.download = 'RyzenShield_Redacted.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
     };
 
     return (
@@ -119,39 +173,42 @@ const VisualShield = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="relative w-full h-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-neutral-800">
-                                {/* The Image */}
-                                <img src={imageUrl} alt="Document to scan" className="max-w-full max-h-full object-contain relative z-10" />
+                            <div className="relative w-full h-full flex items-center justify-center bg-black/40 rounded-xl overflow-hidden border border-neutral-800 p-4">
+                                <div ref={containerRef} className="relative max-w-full max-h-full flex items-center justify-center shadow-2xl">
+                                    {/* The Image */}
+                                    <img ref={imageRef} src={imageUrl} alt="Document to scan" className="max-w-full max-h-full block object-contain relative z-10 rounded-lg" />
 
-                                {/* NPU Scanner Animation */}
-                                {isScanning && (
-                                    <motion.div
-                                        initial={{ top: '0%' }}
-                                        animate={{ top: '100%' }}
-                                        transition={{ duration: 1.5, ease: "linear", repeat: Infinity, repeatType: 'reverse' }}
-                                        className="absolute left-0 right-0 h-32 bg-gradient-to-b from-transparent via-purple-500/30 to-purple-500/80 z-20 pointer-events-none border-b-2 border-purple-400 shadow-[0_10px_30px_rgba(168,85,247,0.5)]"
-                                    />
-                                )}
-
-                                {/* Redaction Zones (Simulated bounding boxes) */}
-                                <AnimatePresence>
-                                    {isRedacted && redactionZones.map((zone, idx) => (
+                                    {/* NPU Scanner Animation */}
+                                    {isScanning && (
                                         <motion.div
-                                            key={idx}
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            transition={{ delay: idx * 0.2, type: "spring" }}
-                                            className="absolute bg-neutral-900/90 backdrop-blur-2xl border border-purple-500/50 z-30 flex items-center justify-center overflow-hidden"
-                                            style={{ top: zone.top, left: zone.left, width: zone.width, height: zone.height, borderRadius: '8px' }}
-                                        >
-                                            <span className="text-white/30 text-[10px] uppercase font-black tracking-widest flex items-center gap-1">
-                                                <EyeOff size={10} /> {zone.label} REDACTED
-                                            </span>
-                                            {/* Inner pixelation effect simulation */}
-                                            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiM0NDQiLz48cmVjdCB3aWR0aD0iMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjIyIi8+PC9zdmc+')] opacity-50" />
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
+                                            initial={{ top: '0%' }}
+                                            animate={{ top: '100%' }}
+                                            transition={{ duration: 1.5, ease: "linear", repeat: Infinity, repeatType: 'reverse' }}
+                                            className="absolute left-0 right-0 h-32 bg-gradient-to-b from-transparent via-purple-500/30 to-purple-500/80 z-20 pointer-events-none border-b-2 border-purple-400 shadow-[0_10px_30px_rgba(168,85,247,0.5)]"
+                                        />
+                                    )}
+
+                                    {/* Redaction Zones (Simulated bounding boxes) */}
+                                    <AnimatePresence>
+                                        {isRedacted && redactionZones.map((zone, idx) => (
+                                            <motion.div
+                                                key={idx}
+                                                drag
+                                                dragMomentum={false}
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: idx * 0.2, type: "spring" }}
+                                                className="redaction-box absolute bg-neutral-900/90 backdrop-blur-2xl border border-purple-500/50 z-30 flex items-center justify-center overflow-hidden cursor-move hover:border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.3)] group"
+                                                style={{ top: zone.top, left: zone.left, width: zone.width, height: zone.height, borderRadius: '8px' }}
+                                            >
+                                                <span className="text-white/30 text-[10px] uppercase font-black tracking-widest flex items-center gap-1 pointer-events-none">
+                                                    <EyeOff size={10} /> {zone.label} REDACTED
+                                                </span>
+                                                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiM0NDQiLz48cmVjdCB3aWR0aD0iMiIgaGVpZ2h0PSIyIiBmaWxsPSIjMjIyIi8+PC9zdmc+')] opacity-50 pointer-events-none" />
+                                            </motion.div>
+                                        ))}
+                                    </AnimatePresence>
+                                </div>
 
                                 {/* Action Bar Override */}
                                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-40 bg-neutral-900/90 backdrop-blur-md p-2 rounded-2xl border border-neutral-700 shadow-2xl flex items-center gap-2">
@@ -171,6 +228,15 @@ const VisualShield = () => {
                                             <><Scan size={16} /> Run Vision Deep Scan</>
                                         )}
                                     </button>
+
+                                    {isRedacted && (
+                                        <button
+                                            onClick={downloadRedactedImage}
+                                            className="px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center gap-2 transition-all bg-neutral-800 hover:bg-neutral-700 text-white shadow-lg mx-2"
+                                        >
+                                            <Download size={16} className="text-purple-400" /> Save Asset
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -248,6 +314,9 @@ const VisualShield = () => {
                                                     <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-1 rounded font-black uppercase tracking-widest">Destroyed</span>
                                                 </div>
                                             ))}
+                                            <p className="text-[10px] text-purple-400/80 italic mt-3 text-center">
+                                                *Pro tip: Click and drag any of the redaction boxes on the image to fine-tune them during your demo!
+                                            </p>
                                         </div>
                                     </div>
 

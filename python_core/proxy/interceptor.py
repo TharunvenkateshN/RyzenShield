@@ -24,6 +24,7 @@ class RyzenShieldInterceptor:
         # Target only AI Chat POST requests
         is_target = flow.request.method == "POST" and (
             "api.openai.com" in flow.request.pretty_host or 
+            "chatgpt.com" in flow.request.pretty_host or
             "claude.ai" in flow.request.pretty_host
         )
 

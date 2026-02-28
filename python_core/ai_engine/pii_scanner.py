@@ -22,8 +22,8 @@ class PIIScanner:
             "AWS_KEY": r"(AKIA[0-9A-Z]{16})",
             "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", 
             "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})",
-            # Strict rigid credential assignment (needs : or =)
-            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret)[\s]*[:=]+[\s]*([A-Za-z0-9@#$%^&!*_-]{5,})", 
+            # Flexible credential assignment (handles 'password is: xxxx', 'password=xxxx', etc.)
+            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret)[\s\w]*[:=]+[\s]*([A-Za-z0-9@#$%^&!*_-]{5,})", 
             "BUDGET": r"\$\d+(?:\.\d+)?(?:k|m|b)?\b" # Catch $50k, $1000, etc.
         }
         

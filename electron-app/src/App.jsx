@@ -6,9 +6,10 @@ import DashboardStats from './components/DashboardStats';
 import SecureBrowser from './components/SecureBrowser'; // Import Browser
 import DataVault from './components/DataVault';
 import DocumentShield from './components/DocumentShield';
+import PhishingSandbox from './components/PhishingSandbox';
 import PerformanceLab from './components/PerformanceLab';
 import Settings from './components/Settings';
-import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2 } from 'lucide-react';
+import { LayoutDashboard, Globe, Cpu, Settings as SettingsIcon, Lock, Activity, ShieldCheck, Zap, FileLock2, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -87,6 +88,7 @@ function App() {
                 <nav className="flex-1 space-y-1">
                     <NavItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
                     <NavItem id="browser" icon={Globe} label="Secure Browser" />
+                    <NavItem id="sandbox" icon={AlertTriangle} label="Threat Sandbox" />
                     <NavItem id="shield" icon={FileLock2} label="Document Shield" />
                     <NavItem id="vault" icon={Lock} label="Data Vault" />
                     <NavItem id="performance" icon={Zap} label="Performance Lab" />
@@ -190,6 +192,11 @@ function App() {
                     <div className={activeTab === 'shield' ? 'h-full' : 'hidden'}>
                         <DocumentShield />
                     </div>
+
+                    {/* Threat Sandbox Tab */}
+                    {activeTab === 'sandbox' && (
+                        <PhishingSandbox />
+                    )}
 
                     {/* Data Vault Tab */}
                     {activeTab === 'vault' && (

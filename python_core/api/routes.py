@@ -244,3 +244,78 @@ async def generate_burner_persona():
     
     return burner
 
+@router.post("/vault/analyze-threat")
+async def analyze_threat(payload: dict):
+    """
+    Early-warning and teach-back engine for phishing & social engineering.
+    Analyzes text for manipulation tactics and sketchy links.
+    """
+    try:
+        text = payload.get("text", "")
+        text_lower = text.lower()
+        flags = []
+        risk_score = 0
+        
+        # 1. Urgency/Fear Check
+        urgency_words = ["urgent", "immediate action", "suspended", "restricted", "verify your identity", "overdue", "final notice"]
+        found_urgency = [w for w in urgency_words if w in text_lower]
+        if found_urgency:
+            risk_score += 40
+            flags.append({
+                "title": "Psychological Manipulation (Urgency)",
+                "explanation": f"Scammers create fake panic using words like '{found_urgency[0]}'. This forces you to act quickly without thinking, which is a classic social engineering tactic."
+            })
+            
+        # 2. Sketchy Link Check
+        import re
+        urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', text)
+        if urls:
+            suspicious_tlds = ['.xyz', '.zip', '.top', '.pw', '.click', '.info']
+            found_sketchy_url = False
+            for url in urls:
+                if any(tld in url for tld in suspicious_tlds) or re.search(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', url):
+                    found_sketchy_url = True
+                    break
+            
+            if found_sketchy_url:
+                risk_score += 50
+                flags.append({
+                    "title": "Suspicious Link Destination",
+                    "explanation": "The message contains a link to an untrusted domain extension or a raw IP address. Phishing sites often use these cheap, disposable domains to steal your login credentials."
+                })
+            else:
+                risk_score += 10
+                flags.append({
+                    "title": "Unverified Link Present",
+                    "explanation": "Always hover over links to check their true destination before clicking, even if they look safe."
+                })
+
+        # 3. Generic Greeting Check
+        if "dear customer" in text_lower or "dear student" in text_lower or "dear user" in text_lower:
+            risk_score += 20
+            flags.append({
+                "title": "Generic Greeting",
+                "explanation": "Legitimate organizations usually address you by your real name. 'Dear Customer' or 'Dear Student' is a massive red flag that this is a bulk spam email."
+            })
+            
+        # Determine overall risk
+        if risk_score >= 80:
+            level = "CRITICAL"
+        elif risk_score >= 40:
+            level = "HIGH"
+        elif risk_score >= 20:
+            level = "MEDIUM"
+        else:
+            level = "LOW"
+            
+        vault.log_event("THREAT_ANALYSIS", f"Analyzed message. Risk level: {level}")
+            
+        return {
+            "risk_level": level,
+            "risk_score": risk_score,
+            "flags": flags
+        }
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e), "status": "error"}

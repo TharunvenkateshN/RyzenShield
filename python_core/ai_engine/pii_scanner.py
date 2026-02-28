@@ -22,7 +22,8 @@ class PIIScanner:
             "AWS_KEY": r"(AKIA[0-9A-Z]{16})",
             "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", 
             "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})",
-            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret)[\s:=]+([A-Za-z0-9@#$%^&!*_-]{5,})", # Captures password labels + string
+            # Strict rigid credential assignment (needs : or =)
+            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret)[\s]*[:=]+[\s]*([A-Za-z0-9@#$%^&!*_-]{5,})", 
             "BUDGET": r"\$\d+(?:\.\d+)?(?:k|m|b)?\b" # Catch $50k, $1000, etc.
         }
         
@@ -35,14 +36,6 @@ class PIIScanner:
         
         # 2. SpaCy NER Labels to target
         self.ner_labels = ["PERSON", "ORG", "GPE", "Loc"] 
-
-    def scan(self, text: str) -> list:
-        """
-        Hybrid Scan: Combines Regex (Fast/Rigid) + SpaCy NER (Contextual).
-        Returns unique list of findings.
-        """
-        findings = []
-        seen_values = set()
 
     def _is_likely_code(self, text: str) -> bool:
         """Heuristic to prevent SpaCy from falsely flagging code syntax as entities."""
@@ -59,17 +52,61 @@ class PIIScanner:
             return True
         return False
 
+    def _deep_context_scan(self, text: str) -> list:
+        """
+        Simulates an ONNX quantized Small Language Model (SLM) running on the NPU.
+        It detects conversational intent of sharing a secret ("my password is...", "the passcode is...")
+        which regex and NER cannot catch.
+        """
+        findings = []
+        # Look for intent phrases followed by potential secrets.
+        # This handles conversational distance: "password for the bio server is X"
+        intent_patterns = [
+            r"(?i)(?:secret|passcode|password|code|key|pin)[\s\w]*(?:is|was|to|for|are)[\s:]+([a-zA-Z0-9!@#$%^&*()-]+)",
+            r"(?i)my\s+(?:login|credentials?)[\s\w]*(?:are|is)[\s:]+([a-zA-Z0-9!@#$%^&*()-]+)",
+            r"(?i)(?:don't|do not)\s+share\s+this[\s:]+([a-zA-Z0-9!@#$%^&*()-]+)",
+            r"(?i)log\s*in\s+with\s+([a-zA-Z0-9!@#$%^&*()-]+)"
+        ]
+        
+        for pattern in intent_patterns:
+            matches = re.finditer(pattern, text)
+            for m in matches:
+                val = m.group(1)
+                # Ignore common stop words that might be accidentally caught
+                if val.lower() not in ["the", "a", "an", "this", "that", "it"]:
+                    findings.append({
+                        "type": "CONTEXT_SECRET",
+                        "value": val,
+                        "start": m.start(1),
+                        "end": m.end(1),
+                        "method": "slm_context"
+                    })
+        return findings
+
+    def scan(self, text: str) -> list:
+        """
+        Hybrid Scan: Combines Regex (Fast/Rigid) + SpaCy NER (Contextual) + Deep Context Engine.
+        Returns unique list of findings.
+        """
+        findings = []
+        seen_values = set()
+
         # Phase 1: Regex Scan
         for label, pattern in self.regex_patterns.items():
             matches = re.finditer(pattern, text)
             for match in matches:
-                val = match.group()
+                # If there are groups (like in CREDENTIAL), extract the group, otherwise entire match
+                val = match.group(1) if match.groups() else match.group()
+                # Find start and end of the extracted value
+                start = match.start(1) if match.groups() else match.start()
+                end = match.end(1) if match.groups() else match.end()
+                
                 if val not in seen_values:
                     findings.append({
                         "type": label,
                         "value": val,
-                        "start": match.start(),
-                        "end": match.end(),
+                        "start": start,
+                        "end": end,
                         "method": "regex"
                     })
                     seen_values.add(val)
@@ -107,6 +144,13 @@ class PIIScanner:
                         "method": "keyword"
                     })
                     seen_values.add(val)
+                    
+        # Phase 4: Deep Context Engine (SLM Simulation)
+        contextual_secrets = self._deep_context_scan(text)
+        for secret in contextual_secrets:
+            if secret["value"] not in seen_values:
+                findings.append(secret)
+                seen_values.add(secret["value"])
         
         return findings
 
@@ -125,5 +169,7 @@ class PIIScanner:
         if pii_type == "GPE": return f"[{prefix}-LOC-{suffix}]"
         if pii_type == "CREDENTIAL": return f"[{prefix}-CREDS-{suffix}]"
         if pii_type == "CONFIDENTIAL": return f"[{prefix}-DATA-{suffix}]"
+        if pii_type == "CONTEXT_SECRET": return f"[{prefix}-INTENT-{suffix}]"
         
         return f"[{prefix}-SECRET-{suffix}]"
+

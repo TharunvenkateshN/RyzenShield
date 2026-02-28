@@ -141,22 +141,36 @@ async def process_text_api(payload: dict):
                 nonlocal modified
                 if isinstance(obj, dict):
                     for k, v in obj.items():
-                        # ChatGPT message content is always in a field called 'parts'
-                        if k == 'parts' and isinstance(v, list):
-                            for i in range(len(v)):
-                                if isinstance(v[i], str):
-                                    findings = scanner.scan(v[i])
-                                    if findings:
-                                        sanitized, mapping = inference.sanitize(v[i], findings, scanner)
-                                        v[i] = sanitized
-                                        all_findings.extend(findings)
-                                        collected_mappings.update(mapping)
-                                        modified = True
+                        if isinstance(v, str):
+                            # Handle common JSON escaping in intercepted strings
+                            content = v.encode().decode('unicode_escape') if '\\' in v else v
+                            findings = scanner.scan(content)
+                            if findings:
+                                sanitized, mapping = inference.sanitize(content, findings, scanner)
+                                # Re-escape if necessary (simple heuristic)
+                                if '\\' in v:
+                                    sanitized = sanitized.encode('unicode_escape').decode().replace('"', '\\"')
+                                obj[k] = sanitized
+                                all_findings.extend(findings)
+                                collected_mappings.update(mapping)
+                                modified = True
                         elif isinstance(v, (dict, list)):
                             targeted_scan(v)
                 elif isinstance(obj, list):
-                    for item in obj:
-                        targeted_scan(item)
+                    for i in range(len(obj)):
+                        if isinstance(obj[i], str):
+                            content = obj[i].encode().decode('unicode_escape') if '\\' in obj[i] else obj[i]
+                            findings = scanner.scan(content)
+                            if findings:
+                                sanitized, mapping = inference.sanitize(content, findings, scanner)
+                                if '\\' in obj[i]:
+                                    sanitized = sanitized.encode('unicode_escape').decode().replace('"', '\\"')
+                                obj[i] = sanitized
+                                all_findings.extend(findings)
+                                collected_mappings.update(mapping)
+                                modified = True
+                        elif isinstance(obj[i], (dict, list)):
+                            targeted_scan(obj[i])
             
             targeted_scan(data)
             

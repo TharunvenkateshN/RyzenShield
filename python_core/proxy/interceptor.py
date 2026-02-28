@@ -71,29 +71,24 @@ class RyzenShieldInterceptor:
                 print(f"[RyzenShield] Error in request interception: {e}")
 
     def response(self, flow: http.HTTPFlow):
-        # 6. Restore Real Values in Response
+        # 🛡️ [RyzenShield] Response restoration is now handled locally in the Secure Browser
+        # based on the user's "Reveal" (Eye) toggle. This ensures the model only sees 
+        # shadow tokens, while the user has local control over visibility.
+        pass
+        
+        """
+        # (Legacy Proxy-side restoration)
         session_id = self.session_map.get(flow.id)
         if session_id:
             try:
-                # Retrieve mapping (Fake -> Real)
                 restore_map = self.vault.get_mappings(session_id)
-                if not restore_map:
-                    return
-
+                if not restore_map: return
                 response_body = flow.response.get_text()
-                
-                # Use engine to restore
                 restored_body = self.engine.restore(response_body, restore_map)
-                
                 if response_body != restored_body:
-                    print(f"[RyzenShield] 🔄 Restored Real Data for session {session_id}")
                     flow.response.set_text(restored_body)
-                    self.vault.log_event("RESTORE", f"Restored data for session {session_id}")
-                
-                # Cleanup RAM cache
                 del self.session_map[flow.id]
-
-            except Exception as e:
-                print(f"[RyzenShield] Error in response restoration: {e}")
+            except: pass
+        """
 
 addons = [RyzenShieldInterceptor()]

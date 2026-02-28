@@ -49,8 +49,10 @@ const DocumentShield = () => {
             let sanitized = text
                 .replace(/\b(?:\d[ -]*?){13,16}\b/g, (match) => { redactedCount++; redactedItems.push({ type: "Payment Card", string: match, tag: "[RS-CARD-001]" }); return "[RS-CARD-001]"; })
                 .replace(/\b\d{3}-\d{2}-\d{4}\b/g, (match) => { redactedCount++; redactedItems.push({ type: "SSN", string: match, tag: "[RS-SSN-002]" }); return "[RS-SSN-002]"; })
-                .replace(/(password|pwd|secret)[\s:=]+([^\s,.]+)/gi, (match, p1, p2) => { redactedCount++; redactedItems.push({ type: "Credentials", string: p2, tag: "[RS-CREDS-003]" }); return `${p1}: [RS-CREDS-003]`; })
-                .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, (match) => { redactedCount++; redactedItems.push({ type: "Email Address", string: match, tag: "[RS-MAIL-004]" }); return "[RS-MAIL-004]"; });
+                .replace(/(password|pwd|secret|key|token)[\s:=]+([^\s,.]+)/gi, (match, p1, p2) => { redactedCount++; redactedItems.push({ type: "Credentials", string: p2, tag: "[RS-CREDS-003]" }); return `${p1}: [RS-CREDS-003]`; })
+                .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, (match) => { redactedCount++; redactedItems.push({ type: "Email Address", string: match, tag: "[RS-MAIL-004]" }); return "[RS-MAIL-004]"; })
+                .replace(/AKIA[0-9A-Za-z]{16,}/g, (match) => { redactedCount++; redactedItems.push({ type: "AWS Key", string: match, tag: "[RS-AWS-005]" }); return "[RS-AWS-005]"; })
+                .replace(/ghp_[a-zA-Z0-9]{30,}/g, (match) => { redactedCount++; redactedItems.push({ type: "GitHub Token", string: match, tag: "[RS-GITHUB-006]" }); return "[RS-GITHUB-006]"; });
 
             setCurrentScan({
                 original_content: text,

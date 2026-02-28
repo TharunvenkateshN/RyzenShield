@@ -19,11 +19,11 @@ class PIIScanner:
             "API_KEY": r"(sk-[a-zA-Z0-9\-]{8,})", # Relaxed and hyphen-capable for demo/test keys
             "SSN": r"\b\d{3}-\d{2}-\d{4}\b",
             "IPV4": r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b",
-            "AWS_KEY": r"(AKIA[0-9A-Z]{16})",
+            "AWS_KEY": r"(AKIA[0-9A-Za-z]{16,})",
             "TOKEN": r"(?:xox[p|b|o|a]-[0-9]{12}-[0-9]{12}-[0-9]{12}-[a-z0-9]{32})", 
-            "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{36})",
-            # Flexible credential assignment (handles 'password is: xxxx', 'password=xxxx', etc.)
-            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret)[\s\w]*[:=]+[\s]*([A-Za-z0-9@#$%^&!*_-]{5,})", 
+            "GITHUB_KEY": r"(ghp_[a-zA-Z0-9]{30,})",
+            # Flexible credential assignment (handles 'password is: xxxx', 'password=xxxx', 'Key:', 'Token:', etc.)
+            "CREDENTIAL": r"(?i)(?:password|passwd|pwd|secret|key|token)[\s\w]*[:=]+[\s]*([A-Za-z0-9@#$%^&!*_-]{5,})", 
             "BUDGET": r"\$\d+(?:\.\d+)?(?:k|m|b)?\b" # Catch $50k, $1000, etc.
         }
         
@@ -62,10 +62,12 @@ class PIIScanner:
         # Look for intent phrases followed by potential secrets.
         # This handles conversational distance: "password for the bio server is X"
         intent_patterns = [
-            r"(?i)(?:secret|passcode|password|code|key|pin)[\s\w]*(?:is|was|to|for|are)[\s:]+([a-zA-Z0-9!@#$%^&*()-]+)",
-            r"(?i)my\s+(?:login|credentials?)[\s\w]*(?:are|is)[\s:]+([a-zA-Z0-9!@#$%^&*()-]+)",
-            r"(?i)(?:don't|do not)\s+share\s+this[\s:]+([a-zA-Z0-9!@#$%^&*()-]+)",
-            r"(?i)log\s*in\s+with\s+([a-zA-Z0-9!@#$%^&*()-]+)"
+            r"(?i)(?:secret|passcode|password|code|key|pin)[\s\w]*(?:is|was|to|for|are|be)[\s:]*([a-zA-Z0-9!@#$%^&*()-]{5,})",
+            r"(?i)my\s+(?:login|credentials?|password|pass)[\s\w]*(?:are|is)[\s:]*([a-zA-Z0-9!@#$%^&*()-]{5,})",
+            r"(?i)(?:don't|do not)\s+share\s+this[\s\w]*(?:is|was)[\s:]*([a-zA-Z0-9!@#$%^&*()-]{5,})",
+            r"(?i)log\s*in\s+with\s+([a-zA-Z0-9!@#$%^&*()-]{5,})",
+            # Explicit key/value dictionary style bindings common in txt files
+            r"(?i)(?:key|token|secret|password|credential)[\s]*:[\s]*([a-zA-Z0-9!@#$%^&*()-]{5,})"
         ]
         
         for pattern in intent_patterns:
